@@ -25,8 +25,8 @@ DEFAULT_DEVICE_NAME = "Controller"
 
 class Controller:
 
-    def __init__(self, car, device_name=DEFAULT_DEVICE_NAME):
-        self.motor = Motor(car)
+    def __init__(self, car=None, device_name=DEFAULT_DEVICE_NAME):
+        self.motor = Motor() if car is None else Motor(car)
         self.device_name = device_name
         self.motor.stop_all()
         self.motor.reset()
@@ -81,7 +81,7 @@ class Controller:
         while gamepad is None:
             devices = [ InputDevice(path) for path in list_devices() ]
             for device in devices:
-                if device.name in DEVICE_NAME:
+                if device.name in self.device_name:
                     gamepad = device
                     break
             if gamepad is None:
