@@ -1,0 +1,8 @@
+evdev
+adafruit_motorkit
+pygame
+opencv-python
+matplotlib
+tensorflow
+keras
+numpy
