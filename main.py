@@ -1,8 +1,9 @@
 from util.controller import Controller
-from util.audio import play_sound
+from util.audio import play_sound, speak
 
-# Play sound
+# Play sounds
 play_sound("startup.mp3")
+speak("Revving the car engines")
 
 # Start controller
 controller = Controller()

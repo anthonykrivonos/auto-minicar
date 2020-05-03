@@ -3,9 +3,11 @@ from os.path import join, dirname
 sys.path.append(join(dirname(__file__), '..'))
 
 from enum import Enum
-from car.motor import Motor
 from time import sleep
 from evdev import InputDevice, list_devices
+
+from car.motor import Motor
+from .audio import speak
 
 ##
 # Controller Polling
@@ -85,14 +87,14 @@ class Controller:
                     gamepad = device
                     break
             if gamepad is None:
-                print("COULD NOT FIND GAMEPAD, TRYING AGAIN")
+                speak("Could not find gamepad, trying again")
                 sleep(retry_s)
                 timeout_s -= retry_s
                 if timeout_s < 0:
-                    print("NEVER FOUND GAMEPAD. EXITING.")
+                    speak("Never found gamepad. Exiting.")
                     return
             else:
-                print("GAMEPAD FOUND")
+                speak("Gamepad found.")
 
         while True:
             try:
@@ -102,7 +104,7 @@ class Controller:
                         try:
                             button = Button(event.code)
                         except:
-                            print("INVALID")
+                            speak("Invalid button.")
                             continue
                         if button is Button.A:
                             self.a_pressed()
@@ -152,5 +154,5 @@ class Controller:
                                 print("DOWN")
             except Exception as e:
                 print("CAUGHT ERROR", e)
-                print("RESTARTING...")
+                speak("Restarting...")
                 sleep(retry_s)
