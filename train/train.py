@@ -19,7 +19,7 @@ def get_frame_by_frame(name=None, fps=4):
     if name is None:
         name = "fbf_" + str(int(time()))
 
-    dname = join(dirname(realpath(sys.argv[0])), "data", name)
+    dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
     if not exists(dname):
         mkdir(dname)
     chdir(dname)
