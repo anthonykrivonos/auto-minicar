@@ -28,5 +28,6 @@ class Timer(object):
             self.is_running = True
 
     def stop(self):
-        self._timer.cancel()
-        self.is_running = False
+        if self._timer and self.is_running:
+            self._timer.cancel()
+            self.is_running = False
