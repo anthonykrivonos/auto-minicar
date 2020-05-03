@@ -8,6 +8,7 @@ from evdev import InputDevice, list_devices
 
 from car.motor import Motor
 from .audio import speak
+from train.train import get_frame_by_frame
 
 ##
 # Controller Polling
@@ -23,7 +24,11 @@ class Button(Enum):
     SELECT = 312
     START = 313
 
+# Name of the controller device
 DEFAULT_DEVICE_NAME = "Controller"
+
+# FPS of frame by frame imaging
+FRAME_BY_FRAME_FPS = 4
 
 class Controller:
 
@@ -32,6 +37,7 @@ class Controller:
         self.device_name = device_name
         self.motor.stop_all()
         self.motor.reset()
+        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
 
     ##
     # Handlers
@@ -39,6 +45,7 @@ class Controller:
 
     def unpressed(self):
         self.motor.stop_all()
+        self.frame_by_frame.stop()
 
     def up_pressed(self):
         self.motor.move_forward()
@@ -59,7 +66,7 @@ class Controller:
         self.motor.stop_all()
 
     def x_pressed(self):
-        pass
+        self.frame_by_frame.start()
 
     def y_pressed(self):
         self.motor.toggle_double_stop()
