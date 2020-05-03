@@ -99,6 +99,8 @@ class Controller:
                 timeout_s -= retry_s
                 if timeout_s < 0:
                     speak("Never found gamepad. Exiting.")
+                    self.frame_by_frame.stop()
+                    self.motor.stop_all()
                     return
             else:
                 speak("Gamepad found.")
