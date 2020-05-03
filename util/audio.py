@@ -1,7 +1,7 @@
 import sys, os
 from os.path import join, dirname
 from gtts import gTTS
-from datetime import datetime
+from time import time
 sys.path.append(join(dirname(__file__), '..'))
 
 import pygame
@@ -16,7 +16,7 @@ def speak(text, slow = False, delete = True, verbose = True):
     # Create the speech object
     speech = gTTS(text=text, lang="en", slow=slow)
     # Create a filename and file location
-    filename = "_".join(text.lower().split(" "))[:10] + "_" + str(int(datetime.now()))
+    filename = "_".join(text.lower().split(" "))[:10] + "_" + str(int(time())) + ".mp3"
     filepath = join(dirname(__file__), "sounds/" + filename)
     # Save the text-to-speech output
     speech.save(filepath)
