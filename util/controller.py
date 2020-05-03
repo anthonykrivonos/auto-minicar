@@ -43,9 +43,10 @@ class Controller:
     # Handlers
     ##
 
-    def unpressed(self):
+    def released(self):
         self.motor.stop_all()
         self.frame_by_frame.stop()
+        print("Released")
 
     def up_pressed(self):
         self.motor.move_forward()
@@ -137,7 +138,7 @@ class Controller:
                         # Directions
                         if event.value is 128:
                             # Released
-                            self.unpressed()
+                            self.released()
                             print("RELEASED")
                         else:
                             # Pressed
