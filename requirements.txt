@@ -6,3 +6,5 @@ tensorflow
 keras
 numpy
 gTTS
+twilio
+python-dotenv
