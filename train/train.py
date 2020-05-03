@@ -6,9 +6,6 @@ from os.path import realpath, join, dirname, exists
 
 from util.timer import Timer
 
-# initialize the camera
-cam = VideoCapture(0)   # 0 -> index of camera
-
 def get_frame_by_frame(name=None, fps=4):
     """
     Creates a timer that outputs a frame-by-frame set of images into the given folder.
@@ -24,13 +21,18 @@ def get_frame_by_frame(name=None, fps=4):
         mkdir(dname)
     chdir(dname)
 
-    def snap():
+    # initialize the camera
+    cam = VideoCapture(0)   # 0 -> index of camera
+
+    def snap(camera):
         number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
 
-        s, img = cam.read()
+        s, img = camera.read()
         path = "./" + str(number_of_files + 1) + ".png"
         if s:
             imwrite(path, img)
             print("Saved to " + dname + "/" + str(number_of_files + 1) + ".png")
+        else:
+            print("Could not read from camera " + str(number_of_files + 1))
 
-    return Timer(1 / fps, snap)
+    return Timer(1 / fps, snap, cam)

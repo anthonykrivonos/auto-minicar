@@ -39,14 +39,16 @@ class Controller:
         self.motor.stop_all()
         self.motor.reset()
 
+    def _reset(self):
+        self.motor.stop_all()
+        self.frame_by_frame.stop()
+
     ##
     # Handlers
     ##
 
     def released(self):
         self.motor.stop_all()
-        self.frame_by_frame.stop()
-        print("Released")
 
     def up_pressed(self):
         self.motor.move_forward()
@@ -67,7 +69,7 @@ class Controller:
         self.motor.stop_all()
 
     def x_pressed(self):
-        self.frame_by_frame.start()
+        pass
 
     def y_pressed(self):
         self.motor.toggle_double_stop()
@@ -83,7 +85,11 @@ class Controller:
         self.motor.reset()
 
     def start_pressed(self):
-        pass
+        self.frame_by_frame.toggle()
+        if self.frame_by_frame.is_running:
+            speak("Recording")
+        else:
+            speak("Stopped recording")
 
     def run_event_loop(self, timeout_s=60, retry_s=5):
         # Find gamepad
@@ -100,8 +106,7 @@ class Controller:
                 timeout_s -= retry_s
                 if timeout_s < 0:
                     speak("Never found gamepad. Exiting.")
-                    self.frame_by_frame.stop()
-                    self.motor.stop_all()
+                    self._reset()
                     return
             else:
                 speak("Gamepad found.")
@@ -164,5 +169,6 @@ class Controller:
                                 print("DOWN")
             except Exception as e:
                 print("CAUGHT ERROR", e)
+                self._reset()
                 speak("Restarting...")
                 sleep(retry_s)

@@ -31,3 +31,9 @@ class Timer(object):
         if self._timer and self.is_running:
             self._timer.cancel()
             self.is_running = False
+
+    def toggle(self):
+        if self.is_running:
+            self.stop()
+        else:
+            self.start()
