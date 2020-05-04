@@ -87,10 +87,9 @@ class Controller:
     def start_pressed(self):
         if self.frame_by_frame.is_running:
             self.frame_by_frame.kill()
+            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
             speak("Stopped recording")
         else:
-            print("Re-initializing fbf")
-            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
             print("Starting fbf")
             self.frame_by_frame.start()
             speak("Started recording")
