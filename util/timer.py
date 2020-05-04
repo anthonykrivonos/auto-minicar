@@ -1,6 +1,8 @@
 import sys
 from os.path import join, dirname
 from threading import Timer as PythonTimer
+from multiprocessing import Process
+from time import sleep
 
 sys.path.append(join(dirname(__file__), '..'))
 
@@ -12,28 +14,44 @@ class Timer(object):
         self._timer     = None
         self.function   = function
         self.interval   = interval
+        self.use_thread = False
         self.args       = args
         self.kwargs     = kwargs
         self.is_running = False
+        self._timer     = None
+        self._processor = None
 
-    def _run(self):
+    def _timer(self):
         self.is_running = False
         self.start()
         self.function(*self.args, **self.kwargs)
 
-    def start(self):
+    def _process(self):
+        sleep(self.interval)
+        self.function(*self.args, **self.kwargs)
+        self._processor()
+
+    def start(self, use_thread):
+        self.use_thread = use_thread
         if not self.is_running:
-            self._timer = PythonTimer(self.interval, self._run)
-            self._timer.start()
+            if self.use_thread:
+                self._timer = PythonTimer(self.interval, self._timer)
+                self._timer.start()
+            else:
+                self._processor = Process(target=self._process)
+                self._processor.start()
             self.is_running = True
 
     def stop(self):
         if self._timer and self.is_running:
-            self._timer.cancel()
+            if self.use_thread:
+                self._timer.cancel()
+            else:
+                self._processor.terminate()
             self.is_running = False
 
-    def toggle(self):
+    def toggle(self, use_thread):
         if self.is_running:
             self.stop()
         else:
-            self.start()
+            self.start(use_thread)
