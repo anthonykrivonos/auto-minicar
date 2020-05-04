@@ -8,40 +8,15 @@ from util.timer import Timer
 
 cwd = os.getcwd()
 
-def get_camera(idx = None):
-    if idx is not None:
-        print("Selected camera %d" % idx)
-        camera = cv2.VideoCapture(idx)
-        camera.release()
-        return camera
-    for i in range(-1, 11):
-        camera = cv2.VideoCapture(i)
-        if camera is None or not camera.read()[0]:
-            break
-        camera.release()
-        print("Got camera %d" % i)
-        return camera
-    print("Could not get camera")
-    return None
+camera = VideoCapture(0)
 
-camera = get_camera()
-
-def _snap(dname):
+def reset_camera():
     global camera
-
-    chdir(dname)
-    number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
-
-    s, img = camera.read()
-    path = "./" + str(number_of_files + 1) + ".png"
-    if s:
-        imwrite(path, img)
-        print("Saved to " + dname + "/" + str(number_of_files + 1) + ".png")
-    else:
-        print("Could not read image %d from camera" % (number_of_files + 1))
-
-    chdir(cwd)
     camera.release()
+    os.system('sudo rmmod uvcvideo')
+    os.system('sudo modprobe uvcvideo nodrop=1 timeout=10000 quirks=0x80')
+    camera = VideoCapture(0)
+    print("Camera successfully reset")
 
 def get_frame_by_frame(name=None, fps=4):
     """
@@ -51,19 +26,42 @@ def get_frame_by_frame(name=None, fps=4):
     :return: A Timer object.
     """
 
+    reset_camera()
+
     if name is None:
         name = "fbf_" + str(int(time()))
 
     chdir(cwd)
     dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
     if not exists(dname):
+        print("Created dir: %s" % dname)
         mkdir(dname)
+    else:
+        print("Using dir: %s" % dname)
 
-    return Timer(1 / fps, _snap, dname)
+    def _snap(dname):
+        global camera
+
+        chdir(dname)
+        number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
+
+        s, img = camera.read()
+        path = "./" + str(number_of_files + 1) + ".png"
+        if s:
+            imwrite(path, img)
+            print("Saved to " + dname + "/" + str(number_of_files + 1) + ".png")
+        else:
+            print("Could not read image %d from camera" % (number_of_files + 1))
+
+        chdir(cwd)
+
+    return Timer(1 / fps, _snap, dname).use_mp()
+
 
 def record_frame_by_frame(name=None, fps=4, duration_s=30):
+    global camera
 
-    camera = get_camera()
+    reset_camera()
 
     if name is None:
         name = "fbf_" + str(int(time()))
@@ -72,10 +70,11 @@ def record_frame_by_frame(name=None, fps=4, duration_s=30):
     dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
     if not exists(dname):
         mkdir(dname)
+    chdir(dname)
 
     file_num = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
 
-    num_frames = int(duration_s / fps)
+    num_frames = int(duration_s * fps)
     delay = 1 / fps
 
     for _ in range(num_frames):
@@ -90,3 +89,5 @@ def record_frame_by_frame(name=None, fps=4, duration_s=30):
             print("Could not read image %d from camera" % file_num)
 
         sleep(delay)
+
+    chdir(cwd)

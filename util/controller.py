@@ -41,8 +41,7 @@ class Controller:
 
     def _reset(self):
         self.motor.stop_all()
-        self.frame_by_frame.stop()
-        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
+        self.frame_by_frame.kill()
 
     ##
     # Handlers
@@ -86,11 +85,15 @@ class Controller:
         self.motor.reset()
 
     def start_pressed(self):
-        self.frame_by_frame.toggle()
         if self.frame_by_frame.is_running:
-            speak("Recording")
-        else:
+            self.frame_by_frame.kill()
             speak("Stopped recording")
+        else:
+            print("Re-initializing fbf")
+            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
+            print("Starting fbf")
+            self.frame_by_frame.start()
+            speak("Started recording")
 
     def run_event_loop(self, timeout_s=60, retry_s=5):
         # Find gamepad

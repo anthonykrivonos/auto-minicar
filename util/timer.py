@@ -14,12 +14,13 @@ class Timer(object):
         self._timer     = None
         self.function   = function
         self.interval   = interval
-        self.use_thread = False
+        self.use_thread = True
         self.args       = args
         self.kwargs     = kwargs
         self.is_running = False
         self._timer     = None
         self._processor = None
+        self._on_kill   = None
 
     def _timer(self):
         self.is_running = False
@@ -31,27 +32,45 @@ class Timer(object):
         self.function(*self.args, **self.kwargs)
         self._process()
 
-    def start(self, use_thread = True):
-        self.use_thread = use_thread
+    def use_mp(self):
+        print("Using multiprocessing")
+        new_timer = Timer(self.interval, self.function, *self.args, **self.kwargs)
+        new_timer.use_thread = False
+        return new_timer
+
+    def start(self):
         if not self.is_running:
             if self.use_thread:
+                print("Started thread timer")
                 self._timer = PythonTimer(self.interval, self._timer)
                 self._timer.start()
             else:
+                print("Started multiprocessing timer")
                 self._processor = Process(target=self._process)
                 self._processor.start()
             self.is_running = True
 
     def stop(self):
-        if self._timer and self.is_running:
+        if ((self.use_thread and self._timer) or (not self.use_thread and self._processor)) and self.is_running:
             if self.use_thread:
+                print("Canceled timer")
                 self._timer.cancel()
             else:
+                print("Terminated processor")
                 self._processor.terminate()
             self.is_running = False
 
-    def toggle(self, use_thread = True):
+    def toggle(self):
         if self.is_running:
             self.stop()
         else:
-            self.start(use_thread)
+            self.start()
+    
+    def on_kill(self, callback):
+        self._on_kill = callback
+        return self
+
+    def kill(self):
+        self.stop()
+        if self._on_kill:
+            self._on_kill()
