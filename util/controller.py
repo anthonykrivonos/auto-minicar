@@ -35,13 +35,14 @@ class Controller:
     def __init__(self, car=None, device_name=DEFAULT_DEVICE_NAME):
         self.motor = Motor() if car is None else Motor(car)
         self.device_name = device_name
-        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
         self.motor.stop_all()
         self.motor.reset()
+        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
 
     def _reset(self):
         self.motor.stop_all()
         self.frame_by_frame.stop()
+        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
 
     ##
     # Handlers
@@ -171,4 +172,5 @@ class Controller:
                 print("CAUGHT ERROR", e)
                 self._reset()
                 speak("Restarting...")
-                sleep(retry_s)
+                self.run_event_loop(timeout_s, retry_s)
+                break

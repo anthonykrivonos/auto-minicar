@@ -18,15 +18,19 @@ def speak(text, slow = False, delete = True, verbose = True):
     # Create a filename and file location
     filename = "_".join(text.lower().split(" "))[:10] + "_" + str(int(time())) + ".mp3"
     filepath = join(dirname(__file__), "sounds/" + filename)
-    # Save the text-to-speech output
-    speech.save(filepath)
-    # Play the output
-    play_sound(filename)
-    # Delete the output if necessary
-    if delete:
-        os.remove(filepath)
-    # Print the output if required
-    if verbose:
-        print("SPOKE: " + text)
+    try:
+        # Save the text-to-speech output
+        speech.save(filepath)
+        # Play the output
+        play_sound(filename)
+        # Delete the output if necessary
+        if delete:
+            os.remove(filepath)
+        # Print the output if required
+        if verbose:
+            print("SPOKE: " + text)
+    except:
+        print("SPEAK ERROR")
+    
     # Return the original filename
     return filename

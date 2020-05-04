@@ -4,7 +4,8 @@ from util.networking import get_device_ip
 from util.notification import notify
 
 # Notify the operator of the device IP
-notify(get_device_ip())
+# -> instead, just ssh pi@raspberrypi.local
+# notify(get_device_ip())
 
 # Play sounds
 play_sound("startup.mp3")
