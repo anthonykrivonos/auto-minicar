@@ -17,7 +17,7 @@ def speak(text, slow = False, delete = True, verbose = True):
     speech = gTTS(text=text, lang="en", slow=slow)
     # Create a filename and file location
     filename = "_".join(text.lower().split(" "))[:10] + "_" + str(int(time())) + ".mp3"
-    filepath = join(dirname(__file__), "sounds/speak/" + filename)
+    filepath = join(dirname(__file__), "sounds/" + filename)
     try:
         # Save the text-to-speech output
         speech.save(filepath)

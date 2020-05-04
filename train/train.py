@@ -1,10 +1,12 @@
 from cv2 import *
-import sys
+import os, sys
 from os import mkdir, chdir
 from time import time
 from os.path import realpath, join, dirname, exists
 
-from util.timer import Timer
+from util.timer import ProcessTimer
+
+cwd = os.getcwd()
 
 def get_camera(idx = None):
     if idx is not None:
@@ -12,7 +14,7 @@ def get_camera(idx = None):
         camera = cv2.VideoCapture(idx)
         camera.release()
         return camera
-    for i in range(0, 11):
+    for i in range(-1, 11):
         camera = cv2.VideoCapture(i)
         if camera is None or not camera.read()[0]:
             break
@@ -22,11 +24,12 @@ def get_camera(idx = None):
     print("Could not get camera")
     return None
 
-camera = None
+camera = get_camera()
 
 def _snap(dname):
     global camera
 
+    chdir(dname)
     number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
 
     s, img = camera.read()
@@ -37,6 +40,8 @@ def _snap(dname):
     else:
         print("Could not read image %d from camera" % (number_of_files + 1))
 
+    chdir(cwd)
+    camera.release()
 
 def get_frame_by_frame(name=None, fps=4):
     """
@@ -46,16 +51,12 @@ def get_frame_by_frame(name=None, fps=4):
     :return: A Timer object.
     """
 
-    global camera
-
     if name is None:
         name = "fbf_" + str(int(time()))
 
-    camera = get_camera()
-
+    chdir(cwd)
     dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
     if not exists(dname):
         mkdir(dname)
-    chdir(dname)
 
-    return Timer(1 / fps, _snap, dname)
+    return ProcessTimer(1 / fps, _snap, dname)

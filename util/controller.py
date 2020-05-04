@@ -86,7 +86,7 @@ class Controller:
         self.motor.reset()
 
     def start_pressed(self):
-        self.frame_by_frame.toggle(use_thread=False)
+        self.frame_by_frame.toggle()
         if self.frame_by_frame.is_running:
             speak("Recording")
         else:
