@@ -1,10 +1,10 @@
 from cv2 import *
 import os, sys
 from os import mkdir, chdir
-from time import time
+from time import time, sleep
 from os.path import realpath, join, dirname, exists
 
-from util.timer import ProcessTimer
+from util.timer import Timer
 
 cwd = os.getcwd()
 
@@ -59,4 +59,34 @@ def get_frame_by_frame(name=None, fps=4):
     if not exists(dname):
         mkdir(dname)
 
-    return ProcessTimer(1 / fps, _snap, dname)
+    return Timer(1 / fps, _snap, dname)
+
+def record_frame_by_frame(name=None, fps=4, duration_s=30):
+
+    camera = get_camera()
+
+    if name is None:
+        name = "fbf_" + str(int(time()))
+
+    chdir(cwd)
+    dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
+    if not exists(dname):
+        mkdir(dname)
+
+    file_num = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
+
+    num_frames = int(duration_s / fps)
+    delay = 1 / fps
+
+    for _ in range(num_frames):
+        file_num += 1
+
+        s, img = camera.read()
+        path = "./" + str(file_num) + ".png"
+        if s:
+            imwrite(path, img)
+            print("Saved to " + dname + "/" + str(file_num) + ".png")
+        else:
+            print("Could not read image %d from camera" % file_num)
+
+        sleep(delay)

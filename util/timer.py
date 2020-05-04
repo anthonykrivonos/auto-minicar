@@ -55,31 +55,3 @@ class Timer(object):
             self.stop()
         else:
             self.start(use_thread)
-
-class ProcessTimer(Process):
-    def __init__(self, interval, function, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        super(ProcessTimer, self).__init__()
-        self.interval = interval
-        self.function = function
-        self.finished = Event()
-        self.is_running = False
-
-    def toggle(self):
-        if self.is_running:
-            self.stop()
-        else:
-            self.start()
-
-    def stop(self):
-        """Stop the timer if it hasn't finished yet"""
-        self.finished.set()
-        self.is_running = False
-
-    def start(self):
-        self.is_running = True
-        self.finished.wait(self.interval)
-        if not self.finished.is_set():
-            self.function(*self.args, **self.kwargs)
-        self.finished.set()

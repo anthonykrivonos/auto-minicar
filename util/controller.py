@@ -8,7 +8,7 @@ from evdev import InputDevice, list_devices
 
 from car.motor import Motor
 from .audio import speak
-from train.train import get_frame_by_frame
+from train.camera import get_frame_by_frame
 
 ##
 # Controller Polling

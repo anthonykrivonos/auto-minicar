@@ -13,6 +13,9 @@ def play_sound(sound):
     pygame.mixer.music.play()
 
 def speak(text, slow = False, delete = True, verbose = True):
+    # Print the output if required
+    if verbose:
+        print("SPOKE: " + text)
     # Create the speech object
     speech = gTTS(text=text, lang="en", slow=slow)
     # Create a filename and file location
@@ -26,9 +29,6 @@ def speak(text, slow = False, delete = True, verbose = True):
         # Delete the output if necessary
         if delete:
             os.remove(filepath)
-        # Print the output if required
-        if verbose:
-            print("SPOKE: " + text)
     except:
         print("SPEAK ERROR")
     

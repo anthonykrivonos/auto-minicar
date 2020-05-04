@@ -1,11 +1,4 @@
 from time import sleep
-from train.train import get_frame_by_frame
+from train.camera import record_frame_by_frame
 
-fbf = get_frame_by_frame(fps=4)
-print("Frame by frame started")
-
-fbf.start()
-sleep(5)
-fbf.stop()
-
-print("done")
+record_frame_by_frame('test', 4, 20)
