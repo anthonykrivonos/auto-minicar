@@ -18,11 +18,13 @@ def reset_camera():
     camera = VideoCapture(0)
     print("Camera successfully reset")
 
-def get_frame_by_frame(name=None, fps=4):
+def get_frame_by_frame(name=None, fps=4, write_to_disk=False, on_capture=None):
     """
-    Creates a timer that outputs a frame-by-frame set of images into the given folder.
+    Creates a timer that outputs a frame-by-frame set of images.
     :param name: The name of the frame by frame folder.
     :param fps: The frames per second.
+    :param write_to_disk: Write the file to disk? Default false.
+    :param on_capture: Callback that passes in the most recent image as a parameter.
     :return: A Timer object.
     """
 
@@ -39,23 +41,25 @@ def get_frame_by_frame(name=None, fps=4):
     else:
         print("Using dir: %s" % dname)
 
-    def _snap(dname):
+    def _snap(dname, write, capture_callback):
         global camera
-
-        chdir(dname)
-        number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
-
         s, img = camera.read()
-        path = "./" + str(number_of_files + 1) + ".png"
-        if s:
-            imwrite(path, img)
-            print("Saved to " + dname + "/" + str(number_of_files + 1) + ".png")
-        else:
-            print("Could not read image %d from camera" % (number_of_files + 1))
 
-        chdir(cwd)
+        if s and capture_callback:
+            capture_callback(img)
 
-    return Timer(1 / fps, _snap, dname).use_mp()
+        if write:
+            chdir(dname)
+            number_of_files = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
+            path = "./" + str(number_of_files + 1) + ".png"
+            if s:
+                imwrite(path, img)
+                print("Saved to " + dname + "/" + str(number_of_files + 1) + ".png")
+            else:
+                print("Could not read image %d from camera" % (number_of_files + 1))
+            chdir(cwd)
+
+    return Timer(1 / fps, _snap, dname, write_to_disk, on_capture).use_mp()
 
 
 def record_frame_by_frame(name=None, fps=4, duration_s=30):

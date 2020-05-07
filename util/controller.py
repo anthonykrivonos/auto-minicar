@@ -8,7 +8,7 @@ from evdev import InputDevice, list_devices
 
 from car.motor import Motor
 from .audio import speak
-from train.camera import get_frame_by_frame
+from auto.camera import get_frame_by_frame
 
 ##
 # Controller Polling
@@ -63,7 +63,13 @@ class Controller:
         self.motor.move_right()
 
     def a_pressed(self):
-        pass
+        if self.frame_by_frame.is_running:
+            self.frame_by_frame.kill()
+            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS, write_to_disk=True, on_capture=self.motor.move_lkas)
+            speak("Stopped LKAS")
+        else:
+            self.frame_by_frame.start()
+            speak("Started LKAS")
 
     def b_pressed(self):
         self.motor.stop_all()
@@ -87,7 +93,7 @@ class Controller:
     def start_pressed(self):
         if self.frame_by_frame.is_running:
             self.frame_by_frame.kill()
-            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
+            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS, write_to_disk=True)
             speak("Stopped recording")
         else:
             print("Starting fbf")

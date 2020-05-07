@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 from enum import Enum
 from os.path import realpath, join, dirname, exists
+sys.path.append(join(dirname(__file__), '..'))
+
 
 # Reference: https://towardsdatascience.com/deeppicar-part-4-lane-following-via-opencv-737dd9e47c96
 
@@ -23,16 +25,20 @@ class Region(Enum):
 
 
 class Frame:
+    """
+    Wrapper around CV2 image for image processing and lane detection.
+    """
 
-    def __init__(self, path, name="Frame"):
-        img = self._load_img(path)
-        self._outputs = [ img ]
-        self._output_data = [ None ]
-        self._filters = [ None ]
+    def __init__(self, img_or_path, name="Frame"):
+        img, path = self._load_img(img_or_path)
+        self._outputs = [img]
+        self._output_data = [None]
+        self._filters = [None]
         self._name = name
         self._path = path
-    
-    def add(self, filter, color_range=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[], color=(0, 0, 0)):
+
+    def add(self, filter, color_range=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
+            color=(0, 0, 0)):
         _input, input_data, prev_filter = self.top()
         output = None
         output_data = None
@@ -68,17 +74,22 @@ class Frame:
     def top(self):
         return self.get(-1)
 
-    def show(self, stage_idx = -1):
+    def show(self, stage_idx=-1):
         output = self._outputs[stage_idx]
         cv2.imshow(self._name, output)
         cv2.waitKey(0)
 
     @staticmethod
-    def _load_img(path):
-        if path[0] != '/':
-            path = join(dirname(realpath(__file__)), path)
-        image = cv2.imread(path)
-        return image
+    def _load_img(img_or_path):
+        if isinstance(img_or_path, str):
+            path = img_or_path
+            if path[0] != '/':
+                path = join(dirname(realpath(__file__)), path)
+            image = cv2.imread(path)
+        else:
+            path = None
+            image = img_or_path
+        return image, path
 
     @staticmethod
     def _filter_hsv(_input):
@@ -86,7 +97,7 @@ class Frame:
 
     @staticmethod
     def _filter_color_range(_input, color_range):
-        color_range = [ np.array(color) for color in color_range ]
+        color_range = [np.array(color) for color in color_range]
         return cv2.inRange(_input, *color_range)
 
     @staticmethod
@@ -99,14 +110,14 @@ class Frame:
         mask = np.zeros_like(_input)
 
         if isolated_region == Region.TOP:
-            edges = [ (0, 0), (width, 0), (width, height / 2), (0, height / 2) ]
+            edges = [(0, 0), (width, 0), (width, height / 2), (0, height / 2)]
         elif isolated_region == Region.RIGHT:
-            edges = [ (width / 2, 0), (width, 0), (width, height), (width / 2, height ) ]
+            edges = [(width / 2, 0), (width, 0), (width, height), (width / 2, height)]
         elif isolated_region == Region.BOTTOM:
-            edges = [ (0, height / 2), (width, height / 2), (width, height), (0, height) ]
+            edges = [(0, height / 2), (width, height / 2), (width, height), (0, height)]
         else:
-            edges = [ (0, 0), (width / 2, 0), (width / 2, height), (0, height) ]
-        
+            edges = [(0, 0), (width / 2, 0), (width / 2, height), (0, height)]
+
         edges = np.array([edges], np.int32)
         cv2.fillPoly(mask, edges, 255)
 
@@ -136,7 +147,7 @@ class Frame:
         left_fit = []
         right_fit = []
 
-        boundary = 1/3
+        boundary = 1 / 3
         left_region_boundary = width * (1 - boundary)
         right_region_boundary = width * boundary
 
@@ -175,96 +186,3 @@ class Frame:
         output = Frame._draw_lines(output, lane_lines, (0, 255, 255))
 
         return output, lane_lines
-
-def get_offset(lane_img, lane_lines):
-    height, width, _ = lane_img.shape
-    x_offset, y_offset = 0, 0
-
-    num_lanes = len(lane_lines)
-
-    if num_lanes == 1:
-        # One visible lane line
-        x1, _, x2, _ = lane_lines[0][0]
-        x_offset = x2 - x1
-        y_offset = int(height / 2)
-    elif num_lanes == 2:
-        # Two visible lane lines
-        _, _, left_x2, _ = lane_lines[0][0]
-        _, _, right_x2, _ = lane_lines[1][0]
-        x_offset = int((left_x2 + right_x2) / 2 - width / 2)
-        y_offset = int(height / 2)
-
-    steering_angle = np.arctan(x_offset / y_offset) + 1.5708 # 90deg in radians
-
-    return x_offset, y_offset, steering_angle
-
-
-def get_heading_line(x_offset, y_offset, width, height, steering_angle):
-    x1 = int(width / 2)
-    y1 = height
-    x2 = int(x1 - height / 2 / np.tan(steering_angle))
-    y2 = int(height / 2)
-    
-    return [[ x1, y1, x2, y2 ]]
-
-
-def stabilize_steering_angle(
-          curr_steering_angle,
-          new_steering_angle, 
-          num_of_lane_lines, 
-          max_angle_deviation_two_lines=5, 
-          max_angle_deviation_one_lane=1):
-    """
-    Using last steering angle to stabilize the steering angle
-    if new angle is too different from current angle, 
-    only turn by max_angle_deviation degrees
-    """
-    if num_of_lane_lines == 2 :
-        # if both lane lines detected, then we can deviate more
-        max_angle_deviation = max_angle_deviation_two_lines
-    else :
-        # if only one lane detected, don't deviate too much
-        max_angle_deviation = max_angle_deviation_one_lane
-    
-    angle_deviation = new_steering_angle - curr_steering_angle
-    if abs(angle_deviation) > max_angle_deviation:
-        stabilized_steering_angle = int(curr_steering_angle
-            + max_angle_deviation * angle_deviation / abs(angle_deviation))
-    else:
-        stabilized_steering_angle = new_steering_angle
-    return stabilized_steering_angle
-
-
-def get_lane_lines(img_path):
-    test_frame = Frame(img_path)
-
-    # Change to HSV
-    test_frame.add(Filter.HSV)
-
-    # Lift the blue color from the image
-    test_frame.add(Filter.COLOR_RANGE, color_range=([60, 40, 40], [150, 255, 255]))
-
-    # Detect the edges of the blue blobs
-    test_frame.add(Filter.EDGE_DETECTION)
-
-    # Isolate the bottom region
-    test_frame.add(Filter.REGION_ISO, region=Region.BOTTOM)
-
-    # Detect lanes in the image
-    test_frame.add(Filter.LANE_DETECTION, overlay_layer=0)
-
-    # Find and and draw the heading line
-    img, lanes, _ = test_frame.top()
-    height, width, _ = img.shape
-    x_offset, y_offset, steering_angle = get_offset(img, lanes)
-    heading = get_heading_line(x_offset, y_offset, width, height, steering_angle)
-    test_frame.add(Filter.LINES, lines=[heading])
-
-    test_frame.show()
-
-
-##
-#   Test
-##
-
-get_lane_lines('train/train_data_narrow/61.png')
