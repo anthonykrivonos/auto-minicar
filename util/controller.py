@@ -27,8 +27,11 @@ class Button(Enum):
 # Name of the controller device
 DEFAULT_DEVICE_NAME = "Controller"
 
-# FPS of frame by frame imaging
-FRAME_BY_FRAME_FPS = 4
+# FPS of frame by frame for recording
+FBF_RECORD_FPS = 4
+
+# FPS of frame by frame for autonomy
+FBF_AUTONOMY_FPS = 6
 
 class Controller:
 
@@ -37,11 +40,14 @@ class Controller:
         self.device_name = device_name
         self.motor.stop_all()
         self.motor.reset()
-        self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS)
+
+        # Frame-by-frame objects
+        self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
+        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas)
 
     def _reset(self):
         self.motor.stop_all()
-        self.frame_by_frame.kill()
+        self.fbf_record.kill()
 
     ##
     # Handlers
@@ -63,13 +69,13 @@ class Controller:
         self.motor.move_right()
 
     def a_pressed(self):
-        if self.frame_by_frame.is_running:
-            self.frame_by_frame.kill()
-            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS, write_to_disk=True, on_capture=self.motor.move_lkas)
-            speak("Stopped LKAS")
+        if self.fbf_record.is_running:
+            self.fbf_record.kill()
+            self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
+            speak("Stopped recording")
         else:
-            self.frame_by_frame.start()
-            speak("Started LKAS")
+            self.fbf_record.start()
+            speak("Started recording")
 
     def b_pressed(self):
         self.motor.stop_all()
@@ -91,14 +97,13 @@ class Controller:
         self.motor.reset()
 
     def start_pressed(self):
-        if self.frame_by_frame.is_running:
-            self.frame_by_frame.kill()
-            self.frame_by_frame = get_frame_by_frame(fps=FRAME_BY_FRAME_FPS, write_to_disk=True)
-            speak("Stopped recording")
+        if self.fbf_autonomy.is_running:
+            self.fbf_autonomy.kill()
+            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas)
+            speak("Stopped LKAS")
         else:
-            print("Starting fbf")
-            self.frame_by_frame.start()
-            speak("Started recording")
+            self.fbf_autonomy.start()
+            speak("Started LKAS")
 
     def run_event_loop(self, timeout_s=60, retry_s=5):
         # Find gamepad

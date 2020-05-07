@@ -109,7 +109,7 @@ class Motor:
 
     def move_lkas(self, img):
         current_angle = self.angle
-        next_angle = get_steering_angle(img, current_angle)
+        next_angle, _ = get_steering_angle(img, current_angle)
         self.move_angle(next_angle)
 
     def move_forward(self):

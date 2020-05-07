@@ -1,5 +1,5 @@
 import cv2
-import sys
+import sys, os
 import numpy as np
 from enum import Enum
 from os.path import realpath, join, dirname, exists
@@ -16,6 +16,7 @@ class Filter(Enum):
     LINE_DETECTION = 4
     LANE_DETECTION = 5
     LINES = 6
+    FLIP = 7
 
 
 class Region(Enum):
@@ -38,9 +39,13 @@ class Frame:
         self._name = name
         self._path = path
 
-    def add(self, filter, color_range=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
-            color=(0, 0, 0)):
-        _input, input_data, prev_filter = self.top()
+    def add(self, filter, replace_idx=None, color_range=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
+            color=(0, 0, 0), flip_horizontal=True):
+        if replace_idx is None:
+            _input, input_data, prev_filter = self.top()
+        else:
+            _input, input_data, prev_filter = self.get(max(0, replace_idx))
+
         output = None
         output_data = None
         if filter == Filter.HSV:
@@ -55,16 +60,28 @@ class Frame:
             output, output_data = self._filter_line_detection(_input, self._outputs[overlay_layer])
         elif filter == Filter.LANE_DETECTION:
             if prev_filter != Filter.LINE_DETECTION:
+                if replace_idx:
+                    raise Exception('Cannot replace layer with Lane Detection if previous layer is not a Line Detection layer.')
                 _input, input_data, prev_filter = self.add(Filter.LINE_DETECTION)
             output, output_data = self._filter_lane_detection(_input, input_data, self._outputs[overlay_layer])
         elif filter == Filter.LINES:
             output = self._draw_lines(_input, lines, color)
+        elif filter == Filter.FLIP:
+            output = self._filter_flip(_input, flip_horizontal)
 
-        self._outputs.append(output)
-        self._output_data.append(output_data)
-        self._filters.append(filter)
+        if replace_idx is not None:
+            self._outputs[replace_idx] = output
+            self._output_data[replace_idx] = output_data
+            self._filters[replace_idx] = filter
+        else:
+            self._outputs.append(output)
+            self._output_data.append(output_data)
+            self._filters.append(filter)
 
         return output, output_data, filter
+
+    def replace(self, idx, filter, **kwargs):
+        self.add(filter, replace_idx=idx, **kwargs)
 
     def get(self, idx):
         return self._outputs[idx], self._output_data[idx], self._filters[idx]
@@ -85,7 +102,8 @@ class Frame:
         if isinstance(img_or_path, str):
             path = img_or_path
             if path[0] != '/':
-                path = join(dirname(realpath(__file__)), path)
+                path = join(os.getcwd(), path)
+            print(path)
             image = cv2.imread(path)
         else:
             path = None
@@ -125,6 +143,10 @@ class Frame:
         return cv2.bitwise_and(_input, mask)
 
     @staticmethod
+    def _filter_flip(_input, flip_horizontal):
+        return cv2.flip(_input, 1 if flip_horizontal else 0)
+
+    @staticmethod
     def _draw_lines(frame, lines, color):
         output = frame.copy()
         for line in lines:
@@ -159,30 +181,52 @@ class Frame:
                 fit = np.polyfit((x1, x2), (y1, y2), 1)
                 slope = fit[0]
                 intercept = fit[1]
-                if slope < 0:
-                    if x1 < left_region_boundary and x2 < left_region_boundary:
-                        left_fit.append((slope, intercept))
-                else:
-                    if x1 > right_region_boundary and x2 > right_region_boundary:
-                        right_fit.append((slope, intercept))
+                if slope < 0 and x1 < left_region_boundary and x2 < left_region_boundary:
+                    left_fit.append((slope, intercept))
+                elif slope > 0 and x1 > right_region_boundary and x2 > right_region_boundary:
+                    right_fit.append((slope, intercept))
+
+        def lines_intersect(a1, a2, b1, b2):
+            # https://stackoverflow.com/a/42727584/7432026
+            s = np.vstack([a1,a2,b1,b2])        # s for stacked
+            h = np.hstack((s, np.ones((4, 1)))) # h for homogeneous
+            l1 = np.cross(h[0], h[1])           # get first line
+            l2 = np.cross(h[2], h[3])           # get second line
+            x, y, z = np.cross(l1, l2)          # point of intersection
+            return z != 0
 
         def make_points(frame, line):
             height, width, _ = frame.shape
             slope, intercept = line
             y1 = height
             y2 = int(y1 * 1 / 2)
-
             x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
             x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
             return [[x1, y1, x2, y2]]
 
         left_fit_average = np.average(left_fit, axis=0)
         if len(left_fit) > 0:
-            lane_lines.append(make_points(_input, left_fit_average))
+            left_line = make_points(_input, left_fit_average)
+            lane_lines.append(left_line)
 
         right_fit_average = np.average(right_fit, axis=0)
         if len(right_fit) > 0:
-            lane_lines.append(make_points(_input, right_fit_average))
+            right_line = make_points(_input, right_fit_average)
+            lane_lines.append(right_line)
+
+        # Check for intersection
+        # if len(lane_lines) == 2:
+        #     point_a1 = lane_lines[0][0][:2]
+        #     point_a2 = lane_lines[0][0][2:4]
+        #     point_b1 = lane_lines[1][0][:2]
+        #     point_b2 = lane_lines[1][0][2:4]
+        #     do_intersect = lines_intersect(point_a1, point_a2, point_b1, point_b2)
+        #     if do_intersect:
+        #         # Drop the less confident line out (greater slope)
+        #         if left_fit_average[0] > right_fit_average[0]:
+        #             del lane_lines[0]
+        #         else:
+        #             del lane_lines[1]
 
         output = Frame._draw_lines(output, lane_lines, (0, 255, 255))
 
