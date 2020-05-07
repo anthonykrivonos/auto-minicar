@@ -25,7 +25,7 @@ def speak(text, slow = False, delete = True, verbose = True):
         # Save the text-to-speech output
         speech.save(filepath)
         # Play the output
-        play_sound(filename)
+        play_sound(filepath)
         # Delete the output if necessary
         if delete:
             os.remove(filepath)

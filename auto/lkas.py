@@ -89,4 +89,7 @@ def get_steering_angle(cv2_image, curr_steering_angle = 0, max_angle_deviation_t
 
     steering_angle = _stabilize_steering_angle(curr_steering_angle, steering_angle, max_angle_deviation)
 
+    # Convert to degrees
+    steering_angle *= (180 / np.pi)
+
     return steering_angle
