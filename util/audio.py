@@ -1,5 +1,6 @@
 import sys, os
-from os.path import join, dirname
+from os import mkdir
+from os.path import join, dirname, exists
 from gtts import gTTS
 from time import time
 sys.path.append(join(dirname(__file__), '..'))
@@ -19,18 +20,21 @@ def speak(text, slow = False, delete = True, verbose = True):
     # Create the speech object
     speech = gTTS(text=text, lang="en", slow=slow)
     # Create a filename and file location
+    temp_dir = join(dirname(__file__), "sounds/tmp")
+    if not exists(temp_dir):
+        mkdir(temp_dir)
     filename = "_".join(text.lower().split(" "))[:10] + "_" + str(int(time())) + ".mp3"
-    filepath = join(dirname(__file__), "sounds/tmp/" + filename)
+    filepath = join(temp_dir, filename)
     try:
         # Save the text-to-speech output
         speech.save(filepath)
         # Play the output
-        play_sound(filepath)
+        play_sound("tmp/" + filename)
         # Delete the output if necessary
         if delete:
             os.remove(filepath)
-    except:
-        print("SPEAK ERROR")
+    except Exception as e:
+        print("SPEAK ERROR: %s" % e)
     
     # Return the original filename
     return filename

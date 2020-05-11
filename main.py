@@ -11,5 +11,5 @@ play_sound("startup.mp3")
 speak("Revving the car engines")
 
 # Start controller
-controller = Controller()
+controller = Controller(display_feed=True)
 controller.run_event_loop()

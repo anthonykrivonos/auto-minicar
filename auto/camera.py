@@ -1,5 +1,6 @@
 from cv2 import *
 import os, sys
+import numpy as np
 from os import mkdir, chdir
 from time import time, sleep
 from os.path import realpath, join, dirname, exists
@@ -13,18 +14,23 @@ camera = VideoCapture(0)
 def reset_camera():
     global camera
     camera.release()
+    cv2.destroyAllWindows() 
     os.system('sudo rmmod uvcvideo')
     os.system('sudo modprobe uvcvideo nodrop=1 timeout=10000 quirks=0x80')
     camera = VideoCapture(0)
-    print("Camera successfully reset")
 
-def get_frame_by_frame(name=None, fps=4, write_to_disk=False, on_capture=None):
+def get_single_frame():
+    reset_camera()
+    s, img = camera.read()
+    return img
+
+def get_frame_by_frame(name=None, fps=4, write_to_disk=False, display_feed=False, on_capture=None):
     """
     Creates a timer that outputs a frame-by-frame set of images.
     :param name: The name of the frame by frame folder.
     :param fps: The frames per second.
     :param write_to_disk: Write the file to disk? Default false.
-    :param on_capture: Callback that passes in the most recent image as a parameter.
+    :param on_capture: Callback that passes in the most recent image as a parameter and returns a modified image.
     :return: A Timer object.
     """
 
@@ -32,21 +38,29 @@ def get_frame_by_frame(name=None, fps=4, write_to_disk=False, on_capture=None):
 
     if name is None:
         name = "fbf_" + str(int(time()))
-
-    chdir(cwd)
-    dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
-    if not exists(dname):
-        print("Created dir: %s" % dname)
-        mkdir(dname)
+   
+    dname = None
+    if write_to_disk:
+        chdir(cwd)
+        dname = join(dirname(realpath(sys.argv[0])), "train", "data", name)
+        if not exists(dname):
+            print("Created dir: %s" % dname)
+            mkdir(dname)
+        else:
+            print("Using dir: %s" % dname)
     else:
-        print("Using dir: %s" % dname)
+        print('Not writing to disk')
 
-    def _snap(dname, write, capture_callback):
+    def _snap(name, dname, write, display, capture_callback):
         global camera
         s, img = camera.read()
 
         if s and capture_callback:
-            capture_callback(img)
+            img = capture_callback(img)
+
+        if s and display:
+            cv2.imshow(name, img)
+            cv2.waitKey(1) 
 
         if write:
             chdir(dname)
@@ -59,7 +73,7 @@ def get_frame_by_frame(name=None, fps=4, write_to_disk=False, on_capture=None):
                 print("Could not read image %d from camera" % (number_of_files + 1))
             chdir(cwd)
 
-    return Timer(1 / fps, _snap, dname, write_to_disk, on_capture).use_mp()
+    return Timer(1 / fps, _snap, name, dname, write_to_disk, display_feed, on_capture).use_mp()
 
 
 def record_frame_by_frame(name=None, fps=4, duration_s=30):

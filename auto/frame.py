@@ -1,6 +1,7 @@
 import cv2
 import sys, os
 import numpy as np
+from colorsys import rgb_to_hsv
 from enum import Enum
 from os.path import realpath, join, dirname, exists
 sys.path.append(join(dirname(__file__), '..'))
@@ -68,6 +69,8 @@ class Frame:
             output = self._draw_lines(_input, lines, color)
         elif filter == Filter.FLIP:
             output = self._filter_flip(_input, flip_horizontal)
+        else:
+            raise Exception("%s is not a valid Filter" % filter)
 
         if replace_idx is not None:
             self._outputs[replace_idx] = output
@@ -116,7 +119,13 @@ class Frame:
 
     @staticmethod
     def _filter_color_range(_input, color_range):
-        color_range = [np.array(color) for color in color_range]
+        color_range = [ np.array(rgb_to_hsv(*(np.array(rgb_color)/255.))) for rgb_color in color_range ]
+        for hsv_color in color_range:
+            hsv_color[0] *= 179.
+            hsv_color[1] *= 255.
+            hsv_color[2] *= 255.
+        color_range = [ np.array(hsv_color, np.uint8) for hsv_color in color_range ]
+        print(color_range)
         return cv2.inRange(_input, *color_range)
 
     @staticmethod
@@ -149,6 +158,8 @@ class Frame:
     @staticmethod
     def _draw_lines(frame, lines, color):
         output = frame.copy()
+        if lines is None:
+            lines = []
         for line in lines:
             for x1, y1, x2, y2 in line:
                 cv2.line(output, (x1, y1), (x2, y2), color, 10)
@@ -164,7 +175,7 @@ class Frame:
     def _filter_lane_detection(_input, lines, output):
         lane_lines = []
         if lines is None:
-            return lane_lines
+            return _input, lane_lines
 
         _, width, _ = _input.shape
         left_fit = []
@@ -187,13 +198,12 @@ class Frame:
                     right_fit.append((slope, intercept))
 
         def lines_intersect(a1, a2, b1, b2):
-            # https://stackoverflow.com/a/42727584/7432026
-            s = np.vstack([a1,a2,b1,b2])        # s for stacked
-            h = np.hstack((s, np.ones((4, 1)))) # h for homogeneous
-            l1 = np.cross(h[0], h[1])           # get first line
-            l2 = np.cross(h[2], h[3])           # get second line
-            x, y, z = np.cross(l1, l2)          # point of intersection
-            return z != 0
+            det = (a2[0] - a1[0]) * (b2[1] - b1[1]) - (b2[0] - b1[0]) * (a2[1] - a1[1])
+            if det == 0:
+                return False
+            lam = ((b2[1] - b1[1]) * (b2[0] - a1[0]) + (b1[0] - b2[0]) * (b2[1] - a1[1])) / det
+            gamma = ((a1[1] - a2[1]) * (b2[0] - a1[0]) + (a2[0] - a1[0]) * (b2[1] - a1[1])) / det
+            return (0 < lam and lam < 1) and (0 < gamma and gamma < 1)
 
         def make_points(frame, line):
             height, width, _ = frame.shape
@@ -215,18 +225,18 @@ class Frame:
             lane_lines.append(right_line)
 
         # Check for intersection
-        # if len(lane_lines) == 2:
-        #     point_a1 = lane_lines[0][0][:2]
-        #     point_a2 = lane_lines[0][0][2:4]
-        #     point_b1 = lane_lines[1][0][:2]
-        #     point_b2 = lane_lines[1][0][2:4]
-        #     do_intersect = lines_intersect(point_a1, point_a2, point_b1, point_b2)
-        #     if do_intersect:
-        #         # Drop the less confident line out (greater slope)
-        #         if left_fit_average[0] > right_fit_average[0]:
-        #             del lane_lines[0]
-        #         else:
-        #             del lane_lines[1]
+        if len(lane_lines) == 2:
+            point_a1 = lane_lines[0][0][:2]
+            point_a2 = lane_lines[0][0][2:4]
+            point_b1 = lane_lines[1][0][:2]
+            point_b2 = lane_lines[1][0][2:4]
+            do_intersect = lines_intersect(point_a1, point_a2, point_b1, point_b2)
+            if do_intersect:
+            # Drop the less confident line out (greater slope)
+                if left_fit_average[0] > right_fit_average[0]:
+                    del lane_lines[0]
+                else:
+                    del lane_lines[1]
 
         output = Frame._draw_lines(output, lane_lines, (0, 255, 255))
 

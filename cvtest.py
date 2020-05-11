@@ -1,10 +1,15 @@
 import cv2
 import numpy as np
+from sys import argv
 
+from auto.camera import get_single_frame
 from auto.lkas import get_steering_angle
 
-angle, frame = get_steering_angle('./auto/train_data/train_data_narrow/160.png')
+img = get_single_frame()
+
+angle, frame = get_steering_angle(img)
 
 print(angle)
 
-frame.show()
+layer_idx = int(argv[1]) if len(argv) > 1 else -1
+frame.show(layer_idx)

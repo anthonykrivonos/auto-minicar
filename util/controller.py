@@ -31,23 +31,25 @@ DEFAULT_DEVICE_NAME = "Controller"
 FBF_RECORD_FPS = 4
 
 # FPS of frame by frame for autonomy
-FBF_AUTONOMY_FPS = 6
+FBF_AUTONOMY_FPS = 12
 
 class Controller:
 
-    def __init__(self, car=None, device_name=DEFAULT_DEVICE_NAME):
+    def __init__(self, car=None, device_name=DEFAULT_DEVICE_NAME, display_feed=False):
         self.motor = Motor() if car is None else Motor(car)
         self.device_name = device_name
         self.motor.stop_all()
         self.motor.reset()
+        self.display_feed = display_feed
 
         # Frame-by-frame objects
         self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
-        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas)
+        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas, display_feed=display_feed)
 
     def _reset(self):
         self.motor.stop_all()
         self.fbf_record.kill()
+        self.fbf_autonomy.kill()
 
     ##
     # Handlers
@@ -70,12 +72,13 @@ class Controller:
 
     def a_pressed(self):
         if self.fbf_record.is_running:
+            speak("Stopped recording")
+            self.motor.stop_all()
             self.fbf_record.kill()
             self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
-            speak("Stopped recording")
         else:
-            self.fbf_record.start()
             speak("Started recording")
+            self.fbf_record.start()
 
     def b_pressed(self):
         self.motor.stop_all()
@@ -98,12 +101,13 @@ class Controller:
 
     def start_pressed(self):
         if self.fbf_autonomy.is_running:
+            speak("Stopped elkass") # LKAS
+            self.motor.stop_all()
             self.fbf_autonomy.kill()
-            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas)
-            speak("Stopped LKAS")
+            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas, display_feed=self.display_feed)
         else:
+            speak("Started elkass") # LKAS
             self.fbf_autonomy.start()
-            speak("Started LKAS")
 
     def run_event_loop(self, timeout_s=60, retry_s=5):
         # Find gamepad

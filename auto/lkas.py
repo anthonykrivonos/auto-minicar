@@ -28,7 +28,10 @@ def _get_steering_angle(lane_img, lane_lines):
         x_offset = int((left_x2 + right_x2) / 2 - width / 2)
         y_offset = int(height / 2)
 
-    steering_angle = np.arctan(x_offset / y_offset)
+    if y_offset != 0:
+        steering_angle = np.arctan(x_offset / y_offset)
+    else:
+        steering_angle = 0
 
     # Convert to degrees
     steering_angle *= (180 / np.pi)
@@ -66,15 +69,17 @@ def _stabilize_steering_angle(curr_steering_angle, new_steering_angle, max_angle
 def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=5, max_angle_deviation_one_lane=1):
     test_frame = Frame(cv2_image)
 
-    # Flip
-    # TODO: remove
-    test_frame.replace(0, Filter.FLIP)
-
     # Change to HSV
     test_frame.add(Filter.HSV)
 
     # Lift the blue color from the image
     test_frame.add(Filter.COLOR_RANGE, color_range=([0, 0, 238], [150, 255, 255]))
+
+    # Lift the *black* color from the image
+    # test_frame.add(Filter.COLOR_RANGE, color_range=([0, 0, 0], [120, 120, 80]))
+
+    # Lift the *yellow* color from the image
+    # test_frame.add(Filter.COLOR_RANGE, color_range=([250, 220, 100], [255, 240, 150]))
 
     # Detect the edges of the blue blobs
     test_frame.add(Filter.EDGE_DETECTION)
