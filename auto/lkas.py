@@ -66,38 +66,32 @@ def _stabilize_steering_angle(curr_steering_angle, new_steering_angle, max_angle
     return stabilized_steering_angle
 
 
-def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=5, max_angle_deviation_one_lane=1):
-    test_frame = Frame(cv2_image)
+def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=5, max_angle_deviation_one_lane=1, tape_color=[105, 157, 252]):
+    frame = Frame(cv2_image)
 
     # Change to HSV
-    test_frame.add(Filter.HSV)
+    frame.add(Filter.HSV)
 
-    # Lift the blue color from the image
-    test_frame.add(Filter.COLOR_RANGE, color_range=([0, 0, 238], [150, 255, 255]))
-
-    # Lift the *black* color from the image
-    # test_frame.add(Filter.COLOR_RANGE, color_range=([0, 0, 0], [120, 120, 80]))
-
-    # Lift the *yellow* color from the image
-    # test_frame.add(Filter.COLOR_RANGE, color_range=([250, 220, 100], [255, 240, 150]))
+    # Lift the tape color from the image
+    frame.add(Filter.COLOR_DETECT, color=tape_color)
 
     # Detect the edges of the blue blobs
-    test_frame.add(Filter.EDGE_DETECTION)
+    frame.add(Filter.EDGE_DETECTION)
 
     # Isolate the bottom region
-    test_frame.add(Filter.REGION_ISO, region=Region.BOTTOM)
+    frame.add(Filter.REGION_ISO, region=Region.BOTTOM)
 
     # Detect lanes in the image
-    test_frame.add(Filter.LANE_DETECTION, overlay_layer=0)
+    frame.add(Filter.LANE_DETECTION, overlay_layer=0)
 
     # Find the steering angle
-    img, lanes, _ = test_frame.top()
+    img, lanes, _ = frame.top()
     steering_angle = _get_steering_angle(img, lanes)
 
     # Draw heading line
     height, width, _ = img.shape
     heading_line = _get_heading_line(width, height, steering_angle)
-    test_frame.add(Filter.LINES, lines=[heading_line])
+    frame.add(Filter.LINES, lines=[heading_line])
 
     # Stabilize the steering angle
     if stabilize:
@@ -105,4 +99,4 @@ def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max
         max_angle_deviation = max_angle_deviation_two_lines if num_lanes == 2 else max_angle_deviation_one_lane
         steering_angle = _stabilize_steering_angle(curr_steering_angle, steering_angle, max_angle_deviation)
 
-    return steering_angle, test_frame
+    return steering_angle, frame

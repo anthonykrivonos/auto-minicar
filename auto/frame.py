@@ -11,7 +11,7 @@ sys.path.append(join(dirname(__file__), '..'))
 
 class Filter(Enum):
     HSV = 0
-    COLOR_RANGE = 1
+    COLOR_DETECT = 1
     EDGE_DETECTION = 2
     REGION_ISO = 3
     LINE_DETECTION = 4
@@ -40,7 +40,7 @@ class Frame:
         self._name = name
         self._path = path
 
-    def add(self, filter, replace_idx=None, color_range=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
+    def add(self, filter, replace_idx=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
             color=(0, 0, 0), flip_horizontal=True):
         if replace_idx is None:
             _input, input_data, prev_filter = self.top()
@@ -51,8 +51,8 @@ class Frame:
         output_data = None
         if filter == Filter.HSV:
             output = self._filter_hsv(_input)
-        elif filter == Filter.COLOR_RANGE:
-            output = self._filter_color_range(_input, color_range)
+        elif filter == Filter.COLOR_DETECT:
+            output = self._filter_color_detect(_input, color)
         elif filter == Filter.EDGE_DETECTION:
             output = self._filter_edge_detection(_input, bounds)
         elif filter == Filter.REGION_ISO:
@@ -118,15 +118,18 @@ class Frame:
         return cv2.cvtColor(_input, cv2.COLOR_BGR2HSV)
 
     @staticmethod
-    def _filter_color_range(_input, color_range):
-        color_range = [ np.array(rgb_to_hsv(*(np.array(rgb_color)/255.))) for rgb_color in color_range ]
-        for hsv_color in color_range:
-            hsv_color[0] *= 179.
-            hsv_color[1] *= 255.
-            hsv_color[2] *= 255.
-        color_range = [ np.array(hsv_color, np.uint8) for hsv_color in color_range ]
-        print(color_range)
-        return cv2.inRange(_input, *color_range)
+    def _filter_color_detect(_input, color):
+        def get_color_range(rgb):
+            rgb = np.array(rgb) / 255.
+            hsv = rgb_to_hsv(*rgb)
+            hue = hsv[0] * 179
+            lower = np.array([hue - 10, 0, 0], np.int)
+            upper = np.array([hue + 10, 255, 255], np.int)
+            return lower, upper
+
+        range = get_color_range(color)
+        output = cv2.inRange(_input, *range)
+        return output
 
     @staticmethod
     def _filter_edge_detection(_input, bounds):
