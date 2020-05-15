@@ -27,6 +27,9 @@ class Button(Enum):
 # Name of the controller device
 DEFAULT_DEVICE_NAME = "Controller"
 
+# Color of the lanes
+DEFAULT_TAPE_COLOR = [105, 157, 252]
+
 # FPS of frame by frame for recording
 FBF_RECORD_FPS = 4
 
@@ -35,12 +38,13 @@ FBF_AUTONOMY_FPS = 24
 
 class Controller:
 
-    def __init__(self, car=None, device_name=DEFAULT_DEVICE_NAME, display_feed=False):
-        self.motor = Motor() if car is None else Motor(car)
+    def __init__(self, car=None, speak=True, device_name=DEFAULT_DEVICE_NAME, display_feed=False, tape_color=DEFAULT_TAPE_COLOR):
+        self.motor = Motor(tape_color=tape_color) if car is None else Motor(car, tape_color=tape_color)
         self.device_name = device_name
         self.motor.stop_all()
         self.motor.reset()
         self.display_feed = display_feed
+        self.speak = speak
 
         # Frame-by-frame objects
         self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
@@ -72,12 +76,12 @@ class Controller:
 
     def a_pressed(self):
         if self.fbf_record.is_running:
-            speak("Stopped recording")
+            speak("Stopped recording", fail = not self.speak)
             self.motor.stop_all()
             self.fbf_record.kill()
             self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
         else:
-            speak("Started recording")
+            speak("Started recording", fail = not self.speak)
             self.fbf_record.start()
 
     def b_pressed(self):
@@ -101,12 +105,12 @@ class Controller:
 
     def start_pressed(self):
         if self.fbf_autonomy.is_running:
-            speak("Stopped elkass") # LKAS
+            speak("Stopped elkass", fail = not self.speak) # LKAS
             self.motor.stop_all()
             self.fbf_autonomy.kill()
             self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas, display_feed=self.display_feed)
         else:
-            speak("Started elkass") # LKAS
+            speak("Started elkass", fail = not self.speak) # LKAS
             self.fbf_autonomy.start()
 
     def run_event_loop(self, timeout_s=60, retry_s=5):
@@ -119,15 +123,15 @@ class Controller:
                     gamepad = device
                     break
             if gamepad is None:
-                speak("Could not find gamepad, trying again")
+                speak("Could not find gamepad, trying again", fail = not self.speak)
                 sleep(retry_s)
                 timeout_s -= retry_s
                 if timeout_s < 0:
-                    speak("Never found gamepad. Exiting.")
+                    speak("Never found gamepad. Exiting.", fail = not self.speak)
                     self._reset()
                     return
             else:
-                speak("Gamepad found.")
+                speak("Gamepad found.", fail = not self.speak)
 
         while True:
             try:
@@ -137,7 +141,7 @@ class Controller:
                         try:
                             button = Button(event.code)
                         except:
-                            speak("Invalid button.")
+                            speak("Invalid button.", fail = not self.speak)
                             continue
                         if button is Button.A:
                             self.a_pressed()
@@ -188,6 +192,6 @@ class Controller:
             except Exception as e:
                 print("CAUGHT ERROR", e)
                 self._reset()
-                speak("Restarting...")
+                speak("Restarting...", fail = not self.speak)
                 self.run_event_loop(timeout_s, retry_s)
                 break

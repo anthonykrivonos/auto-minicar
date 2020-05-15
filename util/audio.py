@@ -13,7 +13,9 @@ def play_sound(sound):
     pygame.mixer.music.load(join(dirname(__file__), "sounds/" + sound))
     pygame.mixer.music.play()
 
-def speak(text, slow = False, delete = True, verbose = True):
+def speak(text, slow = False, delete = True, verbose = True, fail = False):
+    if fail:
+        return
     # Print the output if required
     if verbose:
         print("SPOKE: " + text)

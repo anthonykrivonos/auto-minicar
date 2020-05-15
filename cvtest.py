@@ -23,6 +23,8 @@ Examples:
 INDOOR_BLUE_COLOR = [105, 157, 252]
 OUTDOOR_BLUE_COLOR = [54, 179, 254]
 
+tape_color = INDOOR_BLUE_COLOR
+
 # Layer index
 layer_idx = int(argv[1]) if len(argv) > 1 else -1
 
@@ -33,11 +35,15 @@ single = len(argv) == 2 or (len(argv) == 3 and argv[2].isdigit())
 if single:
     # Get the frame
     idx = int(argv[2]) if len(argv) > 2 else 1
-    print('image %d.png' % idx, end='\r')
-    img = cv2.imread('auto/train_data/train_data_narrow/%d.png' % idx)
+    if idx == 0:
+        img = get_single_frame()
+        print('captured image')
+    else:
+        print('image %d.png' % idx, end='\r')
+        img = cv2.imread('auto/train_data/train_data_indoor/%d.png' % idx)
 
     # Get the steering angle
-    angle, frame = get_steering_angle(img, stabilize=False, tape_color=OUTDOOR_BLUE_COLOR)
+    angle, frame = get_steering_angle(img, stabilize=False, tape_color=tape_color)
 
     # Show the calculated frame
     layer_idx = int(argv[1]) if len(argv) > 1 else -1
@@ -46,11 +52,11 @@ if single:
 if fbf or video:
     # Run through all images
     for i in range(1, 87):
-        img = cv2.imread('auto/train_data/train_data_narrow/%d.png' % i)
+        img = cv2.imread('auto/train_data/train_data_indoor/%d.png' % i)
         print('image %d.png' % i, end='\r')
 
         # Get the steering angle
-        angle, frame = get_steering_angle(img, stabilize=False, tape_color=OUTDOOR_BLUE_COLOR)
+        angle, frame = get_steering_angle(img, stabilize=False, tape_color=tape_color)
 
         # Show the calculated frame
         frame.show(layer_idx, 1 if video else 0)

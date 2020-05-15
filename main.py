@@ -6,10 +6,14 @@ from util.networking import get_device_ip
 # -> instead, just ssh pi@raspberrypi.local
 # notify(get_device_ip())
 
+INDOOR_BLUE_COLOR = [105, 157, 252]
+OUTDOOR_BLUE_COLOR = [54, 179, 254]
+
 # Play sounds
 play_sound("startup.mp3")
-speak("Revving the car engines")
+speak("Revving the car engines", fail = True)
 
 # Start controller
-controller = Controller(display_feed=True)
+tape_color = INDOOR_BLUE_COLOR
+controller = Controller(tape_color=tape_color, speak=False, display_feed=True)
 controller.run_event_loop()

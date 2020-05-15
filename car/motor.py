@@ -14,7 +14,7 @@ GO_DEFAULT = 0.95
 STOP = 0.0
 
 # RGB Colors
-BLUE_COLOR = [105, 157, 252]
+DEFAULT_TAPE_COLOR = [105, 157, 252]
 
 # Limits
 MIN_SPEED = 0.7
@@ -32,17 +32,15 @@ DOUBLE_STOP_DEFAULT = True
 
 # Wheels 1, 2, 3, 4 -> top-left, top-right, bottom-left, bottom-right
 
-# Color of the guiding tape
-TAPE_COLOR = BLUE_COLOR
-
 class Motor:
 
-    def __init__(self, car=MotorKit(),  go=GO_DEFAULT, double_stop=DOUBLE_STOP_DEFAULT):
+    def __init__(self, car=MotorKit(),  go=GO_DEFAULT, double_stop=DOUBLE_STOP_DEFAULT, tape_color = DEFAULT_TAPE_COLOR):
         # Car instance
         self.car = car
         self.go = go
         self.angle = 0
         self.double_stop = double_stop
+        self.tape_color = tape_color
 
         for motor in [ self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4]:
             motor.throttle = 0
@@ -140,7 +138,7 @@ class Motor:
 
     def move_lkas(self, img):
         current_angle = self.angle
-        next_angle, frame = get_steering_angle(img, current_angle, tape_color=TAPE_COLOR)
+        next_angle, frame = get_steering_angle(img, current_angle, tape_color=self.tape_color)
         self.move_angle(next_angle)
         return frame.top()[0]
 
