@@ -13,6 +13,9 @@ sys.path.append(join(dirname(__file__), '..'))
 GO_DEFAULT = 0.95
 STOP = 0.0
 
+# RGB Colors
+BLUE_COLOR = [105, 157, 252]
+
 # Limits
 MIN_SPEED = 0.7
 MAX_SPEED = 0.95
@@ -28,6 +31,9 @@ CAR_DIMS = {
 DOUBLE_STOP_DEFAULT = True
 
 # Wheels 1, 2, 3, 4 -> top-left, top-right, bottom-left, bottom-right
+
+# Color of the guiding tape
+TAPE_COLOR = BLUE_COLOR
 
 class Motor:
 
@@ -134,7 +140,7 @@ class Motor:
 
     def move_lkas(self, img):
         current_angle = self.angle
-        next_angle, frame = get_steering_angle(img, current_angle)
+        next_angle, frame = get_steering_angle(img, current_angle, tape_color=TAPE_COLOR)
         self.move_angle(next_angle)
         return frame.top()[0]
 
