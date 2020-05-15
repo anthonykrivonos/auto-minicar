@@ -31,7 +31,7 @@ DEFAULT_DEVICE_NAME = "Controller"
 FBF_RECORD_FPS = 4
 
 # FPS of frame by frame for autonomy
-FBF_AUTONOMY_FPS = 12
+FBF_AUTONOMY_FPS = 24
 
 class Controller:
 

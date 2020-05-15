@@ -95,10 +95,10 @@ class Frame:
     def top(self):
         return self.get(-1)
 
-    def show(self, stage_idx=-1):
+    def show(self, stage_idx=-1, wait_key=0):
         output = self._outputs[stage_idx]
         cv2.imshow(self._name, output)
-        cv2.waitKey(0)
+        cv2.waitKey(wait_key)
 
     @staticmethod
     def _load_img(img_or_path):
@@ -122,9 +122,13 @@ class Frame:
         def get_color_range(rgb):
             rgb = np.array(rgb) / 255.
             hsv = rgb_to_hsv(*rgb)
+            google_hsv_color = "%d°, %d%%, %d%%" % (round(hsv[0]*360), round(hsv[1]*100), round(hsv[2]*100))
+            # print("initial: %s" % google_hsv_color)
             hue = hsv[0] * 179
-            lower = np.array([hue - 10, 0, 0], np.int)
-            upper = np.array([hue + 10, 255, 255], np.int)
+            lower = np.array([max(0, hue - 20), hsv[1]*255 * 0.4, hsv[1]*255 * 0.3], np.int)
+            upper = np.array([min(179, hue + 20), min(255, hsv[1]*255 * 1.2), min(255, hsv[1]*255 * 1.2)], np.int)
+            # print("lower: %d°, %d%%, %d%%" % (round(lower[0]*2), round(lower[1]/255*100), round(lower[2]/255*100)))
+            # print("upper: %d°, %d%%, %d%%" % (round(upper[0]*2), round(upper[1]/255*100), round(upper[2]/255*100)))
             return lower, upper
 
         range = get_color_range(color)
@@ -227,19 +231,19 @@ class Frame:
             right_line = make_points(_input, right_fit_average)
             lane_lines.append(right_line)
 
-        # Check for intersection
+        # Drop the less confident line if the lanes intersect
         if len(lane_lines) == 2:
-            point_a1 = lane_lines[0][0][:2]
-            point_a2 = lane_lines[0][0][2:4]
-            point_b1 = lane_lines[1][0][:2]
-            point_b2 = lane_lines[1][0][2:4]
-            do_intersect = lines_intersect(point_a1, point_a2, point_b1, point_b2)
+            point_l1 = np.array(lane_lines[0][0][:2])
+            point_l2 = np.array(lane_lines[0][0][2:4])
+            point_r1 = np.array(lane_lines[1][0][:2])
+            point_r2 = np.array(lane_lines[1][0][2:4])
+            left_len, right_len = np.linalg.norm(point_l1 - point_l2), np.linalg.norm(point_r1 - point_r2)
+            left_slope, right_slope = left_fit_average[0], right_fit_average[0]
+            do_intersect = lines_intersect(point_l1, point_l2, point_r1, point_r2)
             if do_intersect:
-            # Drop the less confident line out (greater slope)
-                if left_fit_average[0] > right_fit_average[0]:
-                    del lane_lines[0]
-                else:
-                    del lane_lines[1]
+                # Drop the less confident line out (greater slope)
+                right_confident = abs(left_slope) < abs(right_slope) and right_len > left_len
+                del lane_lines[0 if right_confident else 1]
 
         output = Frame._draw_lines(output, lane_lines, (0, 255, 255))
 
