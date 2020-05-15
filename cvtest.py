@@ -51,12 +51,14 @@ if single:
 
 if fbf or video:
     # Run through all images
+    curr_steering_angle = 0
     for i in range(1, 87):
         img = cv2.imread('auto/train_data/train_data_indoor/%d.png' % i)
         print('image %d.png' % i, end='\r')
 
         # Get the steering angle
-        angle, frame = get_steering_angle(img, stabilize=False, tape_color=tape_color)
+        angle, frame = get_steering_angle(img, curr_steering_angle=curr_steering_angle, stabilize=True, tape_color=tape_color)
+        curr_steering_angle = angle
 
         # Show the calculated frame
         frame.show(layer_idx, 1 if video else 0)

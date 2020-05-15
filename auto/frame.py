@@ -122,13 +122,12 @@ class Frame:
         def get_color_range(rgb):
             rgb = np.array(rgb) / 255.
             hsv = rgb_to_hsv(*rgb)
-            google_hsv_color = "%d°, %d%%, %d%%" % (round(hsv[0]*360), round(hsv[1]*100), round(hsv[2]*100))
-            # print("initial: %s" % google_hsv_color)
             hue = hsv[0] * 179
-            lower = np.array([max(0, hue - 20), hsv[1]*255 * 0.4, hsv[1]*255 * 0.3], np.int)
-            upper = np.array([min(179, hue + 20), min(255, hsv[1]*255 * 1.2), min(255, hsv[1]*255 * 1.2)], np.int)
-            # print("lower: %d°, %d%%, %d%%" % (round(lower[0]*2), round(lower[1]/255*100), round(lower[2]/255*100)))
-            # print("upper: %d°, %d%%, %d%%" % (round(upper[0]*2), round(upper[1]/255*100), round(upper[2]/255*100)))
+            lower = np.array([max(0, hue - 5), hsv[1]*255 * 0.4, hsv[1]*255 * 0.2], np.int)
+            upper = np.array([min(179, hue + 20), min(255, hsv[1]*255 * 1.2), min(255, hsv[1]*255 * 1.5)], np.int)
+            print("initial: %d°, %d%%, %d%%" % (round(hsv[0]*360), round(hsv[1]*100), round(hsv[2]*100)))
+            print("lower:   %d°, %d%%, %d%%" % (round(lower[0]*2), round(lower[1]/255*100), round(lower[2]/255*100)))
+            print("upper:   %d°, %d%%, %d%%" % (round(upper[0]*2), round(upper[1]/255*100), round(upper[2]/255*100)))
             return lower, upper
 
         range = get_color_range(color)
@@ -221,13 +220,13 @@ class Frame:
             x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
             return [[x1, y1, x2, y2]]
 
-        left_fit_average = np.average(left_fit, axis=0)
         if len(left_fit) > 0:
+            left_fit_average = np.average(left_fit, axis=0)
             left_line = make_points(_input, left_fit_average)
             lane_lines.append(left_line)
 
-        right_fit_average = np.average(right_fit, axis=0)
         if len(right_fit) > 0:
+            right_fit_average = np.average(right_fit, axis=0)
             right_line = make_points(_input, right_fit_average)
             lane_lines.append(right_line)
 

@@ -66,7 +66,7 @@ def _stabilize_steering_angle(curr_steering_angle, new_steering_angle, max_angle
     return stabilized_steering_angle
 
 
-def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=15, max_angle_deviation_one_lane=10, tape_color=[105, 157, 252]):
+def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=5, max_angle_deviation_one_lane=10, tape_color=[105, 157, 252]):
     frame = Frame(cv2_image)
 
     # Change to HSV
@@ -88,15 +88,15 @@ def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max
     img, lanes, _ = frame.top()
     steering_angle = _get_steering_angle(img, lanes)
 
-    # Draw heading line
-    height, width, _ = img.shape
-    heading_line = _get_heading_line(width, height, steering_angle)
-    frame.add(Filter.LINES, lines=[heading_line])
-
     # Stabilize the steering angle
     if stabilize:
         num_lanes = len(lanes)
         max_angle_deviation = max_angle_deviation_two_lines if num_lanes == 2 else max_angle_deviation_one_lane
         steering_angle = _stabilize_steering_angle(curr_steering_angle, steering_angle, max_angle_deviation)
+
+    # Draw heading line
+    height, width, _ = img.shape
+    heading_line = _get_heading_line(width, height, steering_angle)
+    frame.add(Filter.LINES, lines=[heading_line])
 
     return steering_angle, frame
