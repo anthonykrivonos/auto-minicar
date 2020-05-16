@@ -105,7 +105,7 @@ class Motor:
             self.move(speed, motors[i])
 
     def move_angle(self, angle):
-        self.go = MAX_SPEED
+        self.go = abs(self.go)
         if abs(angle) < 5:
             self.move(self.go, self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4)
             return
@@ -123,7 +123,7 @@ class Motor:
         # 80-90:
         #   1 0 1 -.6
         fo_speed = MIN_SPEED if angle <= 30 else -MIN_SPEED if (angle > 60 and angle <= 80) else 0
-        bo_speed = 0 if (angle > 30 and angle <= 60) else -MAX_SPEED if angle <= 30 else -MIN_SPEED
+        bo_speed = 0 if (angle > 30 and angle <= 60) else -self.go if angle <= 30 else -MIN_SPEED
 
         front_bias_m  = self.car.motor1 if left_bias else self.car.motor2
         front_other_m = self.car.motor2 if left_bias else self.car.motor1
