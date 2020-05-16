@@ -27,6 +27,14 @@ class Region(Enum):
     LEFT = 3
 
 
+class WhiteBalance:
+    DAYLIGHT = 0
+    CLOUDY = 1
+    INDOORS = 2
+    TUNGSTEN = 3
+    FLUORESCENT = 4
+
+
 class Frame:
     """
     Wrapper around CV2 image for image processing and lane detection.
@@ -41,7 +49,7 @@ class Frame:
         self._path = path
 
     def add(self, filter, replace_idx=None, bounds=(200, 400), region=Region.BOTTOM, overlay_layer=0, lines=[],
-            color=(0, 0, 0), flip_horizontal=True):
+            color=(0, 0, 0), flip_horizontal=True, white_balance=WhiteBalance.INDOORS):
         if replace_idx is None:
             _input, input_data, prev_filter = self.top()
         else:
@@ -52,7 +60,7 @@ class Frame:
         if filter == Filter.HSV:
             output = self._filter_hsv(_input)
         elif filter == Filter.COLOR_DETECT:
-            output = self._filter_color_detect(_input, color)
+            output = self._filter_color_detect(_input, color, white_balance)
         elif filter == Filter.EDGE_DETECTION:
             output = self._filter_edge_detection(_input, bounds)
         elif filter == Filter.REGION_ISO:
@@ -118,16 +126,30 @@ class Frame:
         return cv2.cvtColor(_input, cv2.COLOR_BGR2HSV)
 
     @staticmethod
-    def _filter_color_detect(_input, color):
+    def _filter_color_detect(_input, color, white_balance=WhiteBalance.INDOORS):
+
+        # Derive HSV range: (+- degree, * scalar, * scalar)
+        hsv_range = [ [ -5, 5 ], [ 0.5, 1.5 ], [ 0.5, 1.5 ] ]
+        if white_balance == WhiteBalance.DAYLIGHT:
+            hsv_range = [ [ -5, 10 ], [ 0.8, 1.5 ], [ 0.8, 1.2 ] ]
+        elif white_balance == WhiteBalance.CLOUDY:
+            hsv_range = [ [ -5, 20 ], [ 0.6, 1.5 ], [ 0.6, 1.2 ] ]
+        elif white_balance == WhiteBalance.INDOORS:
+            hsv_range = [ [ -10, 20 ], [ 0.3, 1.2 ], [ 0.6, 1.2 ] ]
+        elif white_balance == WhiteBalance.TUNGSTEN:
+            hsv_range = [ [ -20, 20 ], [ 0.5, 1.5 ], [ 0.2, 1.5 ] ]
+        elif white_balance == WhiteBalance.FLUORESCENT:
+            hsv_range = [ [ -5, 5 ], [ 0.6, 1.2 ], [ 0.8, 1.2 ] ]
+
         def get_color_range(rgb):
             rgb = np.array(rgb) / 255.
             hsv = rgb_to_hsv(*rgb)
             hue = hsv[0] * 179
-            lower = np.array([max(0, hue - 5), hsv[1]*255 * 0.4, hsv[1]*255 * 0.2], np.int)
-            upper = np.array([min(179, hue + 20), min(255, hsv[1]*255 * 1.2), min(255, hsv[1]*255 * 1.5)], np.int)
-            print("initial: %d°, %d%%, %d%%" % (round(hsv[0]*360), round(hsv[1]*100), round(hsv[2]*100)))
-            print("lower:   %d°, %d%%, %d%%" % (round(lower[0]*2), round(lower[1]/255*100), round(lower[2]/255*100)))
-            print("upper:   %d°, %d%%, %d%%" % (round(upper[0]*2), round(upper[1]/255*100), round(upper[2]/255*100)))
+            lower = np.array([ max(0, hue + hsv_range[0][0]), hsv[1]*255 * hsv_range[1][0], hsv[1]*255 * hsv_range[2][0] ], np.int)
+            upper = np.array([ min(179, hue + hsv_range[0][1]), min(255, hsv[1]*255 * hsv_range[1][1]), min(255, hsv[1]*255 * hsv_range[2][1]) ], np.int)
+            # print("initial: %d°, %d%%, %d%%" % (round(hsv[0]*360), round(hsv[1]*100), round(hsv[2]*100)))
+            # print("lower:   %d°, %d%%, %d%%" % (round(lower[0]*2), round(lower[1]/255*100), round(lower[2]/255*100)))
+            # print("upper:   %d°, %d%%, %d%%" % (round(upper[0]*2), round(upper[1]/255*100), round(upper[2]/255*100)))
             return lower, upper
 
         range = get_color_range(color)

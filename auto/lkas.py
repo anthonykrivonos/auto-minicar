@@ -4,7 +4,7 @@ import sys
 from os.path import join, dirname
 sys.path.append(join(dirname(__file__), '..'))
 
-from auto.frame import Frame, Filter, Region
+from auto.frame import Frame, Filter, Region, WhiteBalance
 
 """
 Utility Functions for Lane Keeping Assist System (LKAS)
@@ -66,14 +66,14 @@ def _stabilize_steering_angle(curr_steering_angle, new_steering_angle, max_angle
     return stabilized_steering_angle
 
 
-def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=5, max_angle_deviation_one_lane=10, tape_color=[105, 157, 252]):
+def get_steering_angle(cv2_image, curr_steering_angle = 0, stabilize = True, max_angle_deviation_two_lines=30, max_angle_deviation_one_lane=15, tape_color=[105, 157, 252], white_balance=None):
     frame = Frame(cv2_image)
 
     # Change to HSV
     frame.add(Filter.HSV)
 
     # Lift the tape color from the image
-    frame.add(Filter.COLOR_DETECT, color=tape_color)
+    frame.add(Filter.COLOR_DETECT, color=tape_color, white_balance=white_balance)
 
     # Detect the edges of the blue blobs
     frame.add(Filter.EDGE_DETECTION)
