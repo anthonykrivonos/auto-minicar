@@ -34,7 +34,7 @@ DEFAULT_TAPE_COLOR = [105, 157, 252]
 FBF_RECORD_FPS = 4
 
 # FPS of frame by frame for autonomy
-FBF_AUTONOMY_FPS = 24
+FBF_AUTONOMY_FPS = 4
 
 class Controller:
 
@@ -48,7 +48,7 @@ class Controller:
 
         # Frame-by-frame objects
         self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
-        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas, display_feed=display_feed)
+        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=True, on_capture=self.motor.move_lkas, display_feed=display_feed)
 
     def _reset(self):
         self.motor.stop_all()
@@ -108,7 +108,7 @@ class Controller:
             speak("Stopped elkass", fail = not self.speak) # LKAS
             self.motor.stop_all()
             self.fbf_autonomy.kill()
-            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, on_capture=self.motor.move_lkas, display_feed=self.display_feed)
+            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=True, on_capture=self.motor.move_lkas, display_feed=self.display_feed)
         else:
             speak("Started elkass", fail = not self.speak) # LKAS
             self.fbf_autonomy.start()

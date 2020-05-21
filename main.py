@@ -14,6 +14,6 @@ play_sound("startup.mp3")
 speak("Revving the car engines", fail = True)
 
 # Start controller
-tape_color = INDOOR_BLUE_COLOR
+tape_color = OUTDOOR_BLUE_COLOR
 controller = Controller(tape_color=tape_color, speak=False, display_feed=True)
 controller.run_event_loop()

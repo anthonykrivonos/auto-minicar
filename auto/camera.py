@@ -93,7 +93,7 @@ def record_frame_by_frame(name=None, fps=4, duration_s=30):
     file_num = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
 
     num_frames = int(duration_s * fps)
-    delay = 1 / fps
+    delay = 1 / fps * delay
 
     for _ in range(num_frames):
         file_num += 1
@@ -106,6 +106,6 @@ def record_frame_by_frame(name=None, fps=4, duration_s=30):
         else:
             print("Could not read image %d from camera" % file_num)
 
-        sleep(delay)
+        cv2.waitKey(delay)
 
     chdir(cwd)

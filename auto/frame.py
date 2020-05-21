@@ -128,8 +128,8 @@ class Frame:
     @staticmethod
     def _filter_color_detect(_input, color, white_balance=WhiteBalance.INDOORS):
 
-        # Derive HSV range: (+- degree, * scalar, * scalar)
-        hsv_range = [ [ -5, 5 ], [ 0.5, 1.5 ], [ 0.5, 1.5 ] ]
+        # Derive HSV range: (+- hue (degree), * saturation (scalar), * value (scalar))
+        hsv_range = [ [ -15, 15 ], [ 0.5, 1.8 ], [ 0.4, 1.5 ] ]
         if white_balance == WhiteBalance.DAYLIGHT:
             hsv_range = [ [ -5, 10 ], [ 0.8, 1.5 ], [ 0.8, 1.2 ] ]
         elif white_balance == WhiteBalance.CLOUDY:
@@ -252,19 +252,26 @@ class Frame:
             right_line = make_points(_input, right_fit_average)
             lane_lines.append(right_line)
 
+        use_confidence = True
+        
         # Drop the less confident line if the lanes intersect
-        if len(lane_lines) == 2:
+        if use_confidence and len(lane_lines) == 2:
             point_l1 = np.array(lane_lines[0][0][:2])
             point_l2 = np.array(lane_lines[0][0][2:4])
             point_r1 = np.array(lane_lines[1][0][:2])
             point_r2 = np.array(lane_lines[1][0][2:4])
             left_len, right_len = np.linalg.norm(point_l1 - point_l2), np.linalg.norm(point_r1 - point_r2)
-            left_slope, right_slope = left_fit_average[0], right_fit_average[0]
-            do_intersect = lines_intersect(point_l1, point_l2, point_r1, point_r2)
-            if do_intersect:
-                # Drop the less confident line out (greater slope)
-                right_confident = abs(left_slope) < abs(right_slope) and right_len > left_len
-                del lane_lines[0 if right_confident else 1]
+            if left_len < _input.shape[0] / 4:
+                del lane_lines[0]
+            elif right_len < _input.shape[0] / 4:
+                del lane_lines[1]
+            else:
+                left_slope, right_slope = left_fit_average[0], right_fit_average[0]
+                do_intersect = lines_intersect(point_l1, point_l2, point_r1, point_r2)
+                if do_intersect:
+                    # Drop the less confident line out (greater slope)
+                    right_confident = abs(left_slope) < abs(right_slope) and right_len > left_len
+                    del lane_lines[0 if right_confident else 1]
 
         output = Frame._draw_lines(output, lane_lines, (0, 255, 255))
 

@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from os.path import join, dirname
+from time import sleep
 
 import atexit
 from adafruit_motorkit import MotorKit
@@ -57,7 +58,6 @@ class Motor:
         if speed == 0:
             return self.stop(*motors)
         speed = min(MAX_SPEED, max(MIN_SPEED, abs(speed))) * sign
-        print("Achieving speed %f" % speed)
         up_to_speed = [ False for _ in range(len(motors)) ]
         while not all(up_to_speed):
             for i, motor in enumerate(motors):
@@ -110,36 +110,32 @@ class Motor:
             self.move(self.go, self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4)
             return
         self.angle = angle
-        left_bias = angle > 0
+        right_turn = angle > 0
         angle = abs(angle)
         
-        # Good values
-        # 0-30:
-        #   1 .6 1 -1
-        # 30-60:
-        #   1 0 1 0
-        # 60-80:
-        #   1 -.6 1 -.6
-        # 80-90:
-        #   1 0 1 -.6
-        fo_speed = MIN_SPEED if angle <= 30 else -MIN_SPEED if (angle > 60 and angle <= 80) else 0
-        bo_speed = 0 if (angle > 30 and angle <= 60) else -self.go if angle <= 30 else -MIN_SPEED
+        turn_duration = np.round(2.6 * (angle / 90), 2)
 
-        front_bias_m  = self.car.motor1 if left_bias else self.car.motor2
-        front_other_m = self.car.motor2 if left_bias else self.car.motor1
-        back_bias_m   = self.car.motor3 if left_bias else self.car.motor4
-        back_other_m  = self.car.motor4 if left_bias else self.car.motor3
-        
-        print("Angle: %f | fb: %f, fo: %f, bb: %f, bo: %f" % (self.angle, self.go, fo_speed, self.go, bo_speed))
+        prev_speeds = [ self.car.motor1.throttle, self.car.motor2.throttle, self.car.motor3.throttle, self.car.motor4.throttle ]
 
-        self.move(self.go, front_bias_m, back_bias_m)
-        self.move(fo_speed, front_other_m)
-        self.move(bo_speed, back_other_m)
+        print("Rotating %2.2fdeg" % angle)
+        if right_turn:
+            self.move(self.go, self.car.motor1, self.car.motor3)
+            self.stop(self.car.motor2, self.car.motor4)
+        else:
+            self.move(self.go, self.car.motor2, self.car.motor4)
+            self.stop(self.car.motor1, self.car.motor3)
+
+        sleep(turn_duration)
+
+        self.move(self.go, self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4)
 
     def move_lkas(self, img):
         current_angle = self.angle
         next_angle, frame = get_steering_angle(img, current_angle, tape_color=self.tape_color)
-        self.move_angle(next_angle)
+        if next_angle is not None:
+            self.move_angle(next_angle)
+        else:
+            self.stop_all()
         return frame.top()[0]
 
     def move_forward(self):

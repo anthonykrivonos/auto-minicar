@@ -13,4 +13,4 @@ speeds = [
 ]
 
 car.move_speeds(speeds)
-sleep(2)
+sleep(float(sys.argv[5]) if len(sys.argv) > 5 else 2)
