@@ -71,13 +71,6 @@ class Motor:
                     if motor.throttle == speed:
                         up_to_speed[i] = True
 
-    def move_in_order(self, speeds):
-        assert(len(speeds == 4))
-        self.move(speeds[0], self.car.motor1)
-        self.move(speeds[1], self.car.motor2)
-        self.move(speeds[2], self.car.motor3)
-        self.move(speeds[3], self.car.motor4)
-
     def capture_in_order(self):
         return [ self.car.motor1.throttle, self.car.motor2.throttle, self.car.motor3.throttle, self.car.motor4.throttle ]
 
@@ -110,13 +103,13 @@ class Motor:
             self.go = new_go
 
     def move_speeds(self, speeds):
-        motors = [ self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4]
+        motors = [ self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4 ]
         for i, speed in enumerate(speeds):
             self.move(speed, motors[i])
 
     def move_angle(self, angle):
         self.go = abs(self.go)
-        if abs(angle) < 5:
+        if abs(angle) < 3:
             self.move(self.go, self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4)
             return
         self.angle = angle
@@ -136,14 +129,16 @@ class Motor:
             self.move(self.go, self.car.motor2, self.car.motor4)
 
         sleep(turn_duration)
-        self.move_in_order(prev_speeds)
+        self.move_speeds(prev_speeds)
 
     def move_lkas(self, img):
         current_angle = self.angle
         next_angle, frame = get_steering_angle(img, current_angle, tape_color=self.tape_color)
         if next_angle is not None:
+            print("Rotating %1.4fdeg" % next_angle)
             self.move_angle(next_angle)
         else:
+            print("Stopping car")
             self.stop_all()
         return frame.top()[0]
 
