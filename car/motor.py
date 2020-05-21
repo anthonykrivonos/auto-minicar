@@ -71,6 +71,16 @@ class Motor:
                     if motor.throttle == speed:
                         up_to_speed[i] = True
 
+    def move_in_order(self, speeds):
+        assert(len(speeds == 4))
+        self.move(speeds[0], self.car.motor1)
+        self.move(speeds[1], self.car.motor2)
+        self.move(speeds[2], self.car.motor3)
+        self.move(speeds[3], self.car.motor4)
+
+    def capture_in_order(self):
+        return [ self.car.motor1.throttle, self.car.motor2.throttle, self.car.motor3.throttle, self.car.motor4.throttle ]
+
     def correct(self):
         self.move(self.car.motor1.throttle, self.car.motor1) if self.car.motor1.throttle != STOP else self.stop(self.car.motor1)
         self.move(self.car.motor2.throttle, self.car.motor2) if self.car.motor2.throttle != STOP else self.stop(self.car.motor2)
@@ -112,22 +122,21 @@ class Motor:
         self.angle = angle
         right_turn = angle > 0
         angle = abs(angle)
-        
-        turn_duration = np.round(2.6 * (angle / 90), 2)
 
-        prev_speeds = [ self.car.motor1.throttle, self.car.motor2.throttle, self.car.motor3.throttle, self.car.motor4.throttle ]
+        ninety_deg_sec = 2.6
+        turn_duration = np.round(ninety_deg_sec * (angle / 90), 2)
+
+        prev_speeds = self.capture_in_order()
 
         print("Rotating %2.2fdeg" % angle)
+        self.stop_all()
         if right_turn:
             self.move(self.go, self.car.motor1, self.car.motor3)
-            self.stop(self.car.motor2, self.car.motor4)
         else:
             self.move(self.go, self.car.motor2, self.car.motor4)
-            self.stop(self.car.motor1, self.car.motor3)
 
         sleep(turn_duration)
-
-        self.move(self.go, self.car.motor1, self.car.motor2, self.car.motor3, self.car.motor4)
+        self.move_in_order(prev_speeds)
 
     def move_lkas(self, img):
         current_angle = self.angle
