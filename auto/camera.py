@@ -11,13 +11,14 @@ cwd = os.getcwd()
 
 camera = VideoCapture(0)
 
-def reset_camera():
+def reset_camera(fps=4):
     global camera
     camera.release()
     cv2.destroyAllWindows() 
     os.system('sudo rmmod uvcvideo')
     os.system('sudo modprobe uvcvideo nodrop=1 timeout=10000 quirks=0x80')
     camera = VideoCapture(0)
+    camera.set(cv2.cv.CV_CAP_PROP_FPS, fps)
 
 def get_single_frame():
     reset_camera()
@@ -34,7 +35,7 @@ def get_frame_by_frame(name=None, fps=4, write_to_disk=False, display_feed=False
     :return: A Timer object.
     """
 
-    reset_camera()
+    reset_camera(fps=fps)
 
     if name is None:
         name = "fbf_" + str(int(time()))
@@ -79,7 +80,7 @@ def get_frame_by_frame(name=None, fps=4, write_to_disk=False, display_feed=False
 def record_frame_by_frame(name=None, fps=4, duration_s=30):
     global camera
 
-    reset_camera()
+    reset_camera(fps=fps)
 
     if name is None:
         name = "fbf_" + str(int(time()))
@@ -93,7 +94,7 @@ def record_frame_by_frame(name=None, fps=4, duration_s=30):
     file_num = len([item for item in os.listdir(dname) if os.path.isfile(os.path.join(dname, item))])
 
     num_frames = int(duration_s * fps)
-    delay = 1 / fps * delay
+    delay = 1 / fps
 
     for _ in range(num_frames):
         file_num += 1

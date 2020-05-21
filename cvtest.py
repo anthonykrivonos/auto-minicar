@@ -33,7 +33,8 @@ fbf = len(argv) > 2 and argv[2] == 'fbf'
 video = len(argv) > 2 and argv[2] == 'video'
 single = len(argv) == 2 or (len(argv) == 3 and argv[2].isdigit())
 
-TRAIN_DATA = 'train_data_indoor'
+TRAIN_DATA = 'train_data_narrow'
+# TRAIN_DATA = 'train_data_indoor'
 
 if single:
     # Get the frame
