@@ -7,7 +7,7 @@ from util.networking import get_device_ip
 # notify(get_device_ip())
 
 INDOOR_BLUE_COLOR = [105, 157, 252]
-OUTDOOR_BLUE_COLOR = [54, 179, 254]
+OUTDOOR_BLUE_COLOR = [0, 192, 250]
 
 # Play sounds
 play_sound("startup.mp3")
@@ -15,5 +15,5 @@ speak("Revving the car engines", fail = True)
 
 # Start controller
 tape_color = OUTDOOR_BLUE_COLOR
-controller = Controller(tape_color=tape_color, speak=False, display_feed=True)
+controller = Controller(tape_color=tape_color, speak=True, display_feed=True)
 controller.run_event_loop()

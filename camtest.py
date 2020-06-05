@@ -9,9 +9,9 @@ from auto.frame import WhiteBalance
 
 # Tape colors
 INDOOR_BLUE_COLOR = [105, 157, 252]
-OUTDOOR_BLUE_COLOR = [100, 180, 250]
+OUTDOOR_BLUE_COLOR = [0, 192, 250]
 
-tape_color = OUTDOOR_BLUE_COLOR
+tape_color = INDOOR_BLUE_COLOR
 white_balance = WhiteBalance.DAYLIGHT
 
 # Layer index
