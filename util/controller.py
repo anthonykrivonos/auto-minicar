@@ -38,11 +38,9 @@ FBF_AUTONOMY_FPS = 16
 
 class Controller:
 
-    def __init__(self, car=None, speak=True, device_name=DEFAULT_DEVICE_NAME, display_feed=False, tape_color=DEFAULT_TAPE_COLOR):
-        self.car = Car(tape_color=tape_color) if car is None else Car(car, tape_color=tape_color)
+    def __init__(self, speak=True, device_name=DEFAULT_DEVICE_NAME, display_feed=False, tape_color=DEFAULT_TAPE_COLOR):
+        self.car = Car(tape_color=tape_color)
         self.device_name = device_name
-        self.car.stop_all()
-        self.car.reset()
         self.display_feed = display_feed
         self.speak = speak
 

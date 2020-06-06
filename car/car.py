@@ -33,7 +33,8 @@ class Car:
     ##
 
     def move_speeds(self, *speeds):
-        def reassign_speeds():
+        speeds = list(speeds)
+        def reassign_speeds(res):
             self.speeds = speeds
         send_to_socket(CAR_PORT, str(speeds)[1:-1], reassign_speeds)
 
@@ -48,7 +49,7 @@ class Car:
         self.move_idx(speed, 1, 2, 3, 4)
 
     def stop(self, *motor_ids):
-        self.move_ids(0, motor_ids)
+        self.move_ids(0, *motor_ids)
 
     def stop_all(self):
         self.angle = 0
@@ -105,24 +106,24 @@ class Car:
     def move_forward(self):
         self.angle = 0
         self.go = abs(self.go)
-        self.move(self.go, 1, 2, 3, 4)
+        self.move_ids(self.go, 1, 2, 3, 4)
 
     def move_backward(self):
         self.angle = 0
         self.go = -abs(self.go)
-        self.move(self.go, 1, 2, 3, 4)
+        self.move_ids(self.go, 1, 2, 3, 4)
 
     def move_left(self):
         self.angle = -MAX_ANGLE
-        self.move(self.go, 2, 4)
+        self.move_ids(self.go, 2, 4)
         self.stop(1)
-        self.move(self.go, 3) if not self.double_stop else self.stop(3)
+        self.move_ids(self.go, 3) if not self.double_stop else self.stop(3)
 
     def move_right(self):
         self.angle = MAX_ANGLE
-        self.move(self.go, 1, 3)
+        self.move_ids(self.go, 1, 3)
         self.stop(2)
-        self.move(self.go, 4) if not self.double_stop else self.stop(4)
+        self.move_ids(self.go, 4) if not self.double_stop else self.stop(4)
 
     def toggle_double_stop(self, double_stop=None):
         self.double_stop = double_stop if double_stop is not None else (not self.double_stop)

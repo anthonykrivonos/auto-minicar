@@ -33,17 +33,19 @@ def open_socket(port, on_data, on_quit = None):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, port))
         s.listen()
-        while True:
-            conn, addr = s.accept()
+        try:
             while True:
-                data_enc = conn.recv(BUFFER_SIZE)
-                if not data_enc:
-                    if on_quit:
-                        on_quit()
-                    break
-                # Decode the data
-                data_dec = data_enc.decode('utf-8')
-                conn.sendall(on_data(data_dec).encode())
+                conn, addr = s.accept()
+                while True:
+                    data_enc = conn.recv(BUFFER_SIZE)
+                    if not data_enc:
+                        break
+                    # Decode the data
+                    data_dec = data_enc.decode('utf-8')
+                    conn.sendall(on_data(data_dec).encode())
+        except:
+            if on_quit:
+                on_quit()
 
 
 def send_to_socket(port, value, callback = None):

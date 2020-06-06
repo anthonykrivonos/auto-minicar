@@ -2,6 +2,7 @@ from util.controller import Controller
 from util.audio import play_sound, speak
 from car.car_server import CarServer
 from multiprocessing import Process
+from time import sleep
 
 # Notify the operator of the device IP
 # from util.networking import get_device_ip
@@ -19,6 +20,7 @@ tape_color = INDOOR_BLUE_COLOR
 """
 
 Process(target=lambda: CarServer()).start()
+sleep(2)
 
 """
 2. Give startup feedback.

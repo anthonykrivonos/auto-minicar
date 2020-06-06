@@ -6,7 +6,7 @@ STOP = 0.0
 DEFAULT_TAPE_COLOR = [105, 157, 252]
 
 # Networking
-CAR_PORT = 8088
+CAR_PORT = 8080
 
 # Car dimensions
 CAR_DIMS = {
