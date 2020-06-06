@@ -1,9 +1,9 @@
 import sys
 import numpy as np
-from car.motor import Motor
+from car.car import Car
 from time import sleep
 
-car = Motor()
+car = Car()
 
 speeds = [
     np.round(float(sys.argv[1]), 2),

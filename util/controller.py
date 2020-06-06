@@ -6,7 +6,7 @@ from enum import Enum
 from time import sleep
 from evdev import InputDevice, list_devices
 
-from car.motor import Motor
+from car.car import Car
 from .audio import speak
 from auto.camera import get_frame_by_frame
 
@@ -39,19 +39,19 @@ FBF_AUTONOMY_FPS = 16
 class Controller:
 
     def __init__(self, car=None, speak=True, device_name=DEFAULT_DEVICE_NAME, display_feed=False, tape_color=DEFAULT_TAPE_COLOR):
-        self.motor = Motor(tape_color=tape_color) if car is None else Motor(car, tape_color=tape_color)
+        self.car = Car(tape_color=tape_color) if car is None else Car(car, tape_color=tape_color)
         self.device_name = device_name
-        self.motor.stop_all()
-        self.motor.reset()
+        self.car.stop_all()
+        self.car.reset()
         self.display_feed = display_feed
         self.speak = speak
 
         # Frame-by-frame objects
         self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
-        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=False, on_capture=self.motor.move_lkas, display_feed=display_feed)
+        self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=False, on_capture=self.car.move_lkas, display_feed=display_feed)
 
     def _reset(self):
-        self.motor.stop_all()
+        self.car.stop_all()
         self.fbf_record.kill()
         self.fbf_autonomy.kill()
 
@@ -60,24 +60,24 @@ class Controller:
     ##
 
     def released(self):
-        self.motor.stop_all()
+        self.car.stop_all()
 
     def up_pressed(self):
-        self.motor.move_forward()
+        self.car.move_forward()
 
     def down_pressed(self):
-        self.motor.move_backward()
+        self.car.move_backward()
 
     def left_pressed(self):
-        self.motor.move_left()
+        self.car.move_left()
 
     def right_pressed(self):
-        self.motor.move_right()
+        self.car.move_right()
 
     def a_pressed(self):
         if self.fbf_record.is_running:
             speak("Stopped recording", fail = not self.speak)
-            self.motor.stop_all()
+            self.car.stop_all()
             self.fbf_record.kill()
             self.fbf_record = get_frame_by_frame(fps=FBF_RECORD_FPS, write_to_disk=True)
         else:
@@ -85,30 +85,30 @@ class Controller:
             self.fbf_record.start()
 
     def b_pressed(self):
-        self.motor.stop_all()
+        self.car.stop_all()
 
     def x_pressed(self):
         pass
 
     def y_pressed(self):
-        self.motor.toggle_double_stop()
+        self.car.toggle_double_stop()
 
     def left_trigger_pressed(self):
-        self.motor.change_speed(-1)
+        self.car.change_speed(-1)
 
     def right_trigger_pressed(self):
-        self.motor.change_speed(1)
+        self.car.change_speed(1)
 
     def select_pressed(self):
-        self.motor.stop_all()
-        self.motor.reset()
+        self.car.stop_all()
+        self.car.reset()
 
     def start_pressed(self):
         if self.fbf_autonomy.is_running:
             speak("Stopped elkass", fail = not self.speak) # LKAS
-            self.motor.stop_all()
+            self.car.stop_all()
             self.fbf_autonomy.kill()
-            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=False, on_capture=self.motor.move_lkas, display_feed=self.display_feed)
+            self.fbf_autonomy = get_frame_by_frame(fps=FBF_AUTONOMY_FPS, write_to_disk=False, on_capture=self.car.move_lkas, display_feed=self.display_feed)
         else:
             speak("Started elkass", fail = not self.speak) # LKAS
             self.fbf_autonomy.start()

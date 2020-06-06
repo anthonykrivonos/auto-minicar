@@ -4,3 +4,4 @@ train/data/
 .idea
 *.swp
 util/sounds/tmp/
+venv

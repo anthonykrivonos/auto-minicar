@@ -1,7 +1,6 @@
 import sys
-from car.motor import Motor
-from time import sleep
+from car.car import Car
 
-car = Motor()
+car = Car()
 
 car.move_angle(int(sys.argv[1]))
